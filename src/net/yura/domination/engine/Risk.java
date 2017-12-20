@@ -380,18 +380,21 @@ public class Risk extends Thread {
             String output;
 
             // CLOSE GAME
-            if (input.equals("closegame")) {
-                if (!StringT.hasMoreTokens()) {
+            while (input.equals("closegame")) {
+                while (!StringT.hasMoreTokens()) {
                     closeGame();
                     output=resb.getString("core.close.closed");
+                    break;
                 }
-                else {
+                while (!StringT.hasMoreTokens()) {
                     output=RiskUtil.replaceAll( resb.getString( "core.error.syntax"), "{0}", "closegame");
+                    break;
                 }
+                break;
             }
             // SAVE GAME
-            else if (input.equals("savegame")) {
-                if (StringT.countTokens() >= 1) {
+            while(input.equals("savegame")) {
+                while (StringT.countTokens() >= 1) {
                     if ( unlimitedLocalMode ) {
 
                         String filename = RiskUtil.getAtLeastOne(StringT);
@@ -410,12 +413,17 @@ public class Risk extends Thread {
                     else {
                         output = resb.getString( "core.save.error.unable" );
                     }
+                    break;
                 }
-                else { output=RiskUtil.replaceAll(resb.getString( "core.error.syntax"), "{0}", "savegame filename"); }
+                while (!(StringT.countTokens() >= 1))
+                { output=RiskUtil.replaceAll(resb.getString( "core.error.syntax"), "{0}", "savegame filename");
+                	break;
+                	}
+                break;
             }
             // REPLAY A GAME FROM THE GAME FILE
-            else if (input.equals("replay")) {
-                if ( StringT.hasMoreTokens()==false ) {
+            while(input.equals("replay")) {
+                while( StringT.hasMoreTokens()==false ) {
                     if ( unlimitedLocalMode ) {
                     	/*
                     	 * try not use
@@ -452,23 +460,28 @@ public class Risk extends Thread {
                     else {
                         output="can only replay local games";
                     }
+                    break;
                 }
                 else { output=RiskUtil.replaceAll(resb.getString( "core.error.syntax"), "{0}", "replay"); }
+                break;
             }
-            else if ( onlinePlayClient == null ) {
+            if ( onlinePlayClient == null ) {
                 inGameParser( myAddress+" "+message );
                 output=null;
+              
             }
             else {
                 // send to network
                 onlinePlayClient.sendUserCommand( message );
                 output=null;
+                
             }
 
-            if (output!=null) {
+            while (output!=null) {
                 controller.sendMessage("game>" + message, false, false);
                 controller.sendMessage(output, false, false);
                 getInput();
+                break;
             }
 
         }
@@ -514,26 +527,29 @@ public class Risk extends Thread {
                 try {
                     game = RiskGame.loadGame( filename );
 
-                    if (game == null) {
-                        throw new Exception("no game");
+                    while (game == null) {
+                        throw new Exception("no game");                      
                     }
 
                     unlimitedLocalMode = true;
                     output=resb.getString( "core.loadgame.loaded");
 
                     Player player = game.getCurrentPlayer();
-                    if ( player != null ) {
+                    	while ( player != null ) {
                         // the game is saved
                         saveGameToUndoObject();
                         output=output+ System.getProperty("line.separator") + resb.getString( "core.loadgame.currentplayer") + " " + player.getName();
-                    }
+                        break;
+                    	}
 
-                    if (game.getState()==RiskGame.STATE_NEW_GAME) {
+                    while (game.getState()==RiskGame.STATE_NEW_GAME) {
                         controller.newGame(true);
                         setupPreviews( doesMapHaveMission() );
+                        break;
                     }
-                    else {
+                    while (!(game.getState()==RiskGame.STATE_NEW_GAME) ){
                         controller.startGame(unlimitedLocalMode);
+                        break;
                     }
                 }
                 catch (Exception ex) {
@@ -770,11 +786,11 @@ public class Risk extends Thread {
 
                 if ( patc.getAddress().equals(id) ) {
 
-                    if ( patc.getType() == Player.PLAYER_HUMAN ) {
+                    while ( patc.getType() == Player.PLAYER_HUMAN ) {
 
                         output = output + patc.getName()+" ";
 
-                        if (game.getState() == RiskGame.STATE_NEW_GAME ) {
+                        while(game.getState() == RiskGame.STATE_NEW_GAME ) {
 
                             // should never return false
                             if ( game.delPlayer( patc.getName() ) ) {
@@ -785,25 +801,21 @@ public class Risk extends Thread {
 
                                 patc = null;
                             }
-
+                            break;
                         }
-                        else {
+                        while(!(game.getState() == RiskGame.STATE_NEW_GAME )) {
 
                             patc.setType( Player.PLAYER_AI_CRAP );
-
+                            break;
                         }
+                        break;
                     }
 
                     if (patc!=null) {
 
-                        if (newPlayerAddress!=null) {
+                        while(newPlayerAddress!=null) {
                             patc.setAddress( newPlayerAddress );
-                        }
-                        else {
-
-                            // this means there are only spectators left
-                            // so nothing really needs to be done
-                            // game will stop, but hay there r no more players
+                            break;
                         }
                     }
 
@@ -2102,11 +2114,13 @@ public class Risk extends Thread {
                 controller.sendMessage(output, true, true );
             }
             else if (game.getState()==RiskGame.STATE_END_TURN) {
-                if ( game.getCurrentPlayer().getAutoEndGo() ) {
+                while ( game.getCurrentPlayer().getAutoEndGo() ) {
                     controller.sendMessage(output, false, false );
+                    break;
                 }
-                else {
+                while (!(game.getCurrentPlayer().getAutoEndGo() )) {
                     controller.sendMessage(output, true, true );
+                    break;
                 }
             }
             else {// if player type is human or neutral or ai
@@ -2267,27 +2281,23 @@ public class Risk extends Thread {
                 // yura:lobby taken out: || ((Player)game.getCurrentPlayer()).getAddress().equals("all")
 
                 // IF local game, OR addres match get input
-                if ( unlimitedLocalMode || ((Player)game.getCurrentPlayer()).getAddress().equals(myAddress) ) {
+                while ( unlimitedLocalMode || ((Player)game.getCurrentPlayer()).getAddress().equals(myAddress) ) {
 
-                    if ( game.getState() == RiskGame.STATE_DEFEND_YOURSELF && game.getCurrentPlayer().getAutoDefend() ) {
+                    while( game.getState() == RiskGame.STATE_DEFEND_YOURSELF && game.getCurrentPlayer().getAutoDefend() ) {
 
                         parser( getBasicPassiveGo() );
-
+                        break;
                     }
 
                     // || ((Player)game.getCurrentPlayer()).getType()==Player.PLAYER_NEUTRAL
 
-                    else if ( ((Player)game.getCurrentPlayer()).getType()==Player.PLAYER_HUMAN ) {
+                    while ( ((Player)game.getCurrentPlayer()).getType()==Player.PLAYER_HUMAN ) {
 
                         controller.needInput( game.getState() );
-
+                        break;
                     }
-                    else {
-
                         ai.play(this);
-
-                    }
-
+                        break;
                 }
                 //else if ( game.getCurrentPlayer().getType()==Player.PLAYER_HUMAN ) {
 
@@ -2375,11 +2385,18 @@ public class Risk extends Thread {
         }
         else if (game.getState()==RiskGame.STATE_PLACE_ARMIES) {
 
-            if ( game.getSetupDone() ) { help = help + resb.getString( "core.help.placearmies"); }
+            while( game.getSetupDone() ) { help = help + resb.getString( "core.help.placearmies");
+            break;
+            }
 
-            else if ( game.NoEmptyCountries() ) { help = help + resb.getString( "core.help.placearmy"); }
+            while( game.NoEmptyCountries() ) { help = help + resb.getString( "core.help.placearmy");
+            break;
+            }
 
-            else { help = help + resb.getString( "core.help.placearmyempty"); }
+            while((!(game.getSetupDone() )) && ( !(game.NoEmptyCountries() )))
+            	{ help = help + resb.getString( "core.help.placearmyempty");
+           	break;
+           }
 
         }
         else if (game.getState()==RiskGame.STATE_ATTACKING) {

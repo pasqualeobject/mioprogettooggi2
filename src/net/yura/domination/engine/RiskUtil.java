@@ -398,7 +398,7 @@ public class RiskUtil {
                                             
                                                 String description=MapTranslator.getTranslatedMissionName(st.nextToken()+"-"+st.nextToken()+"-"+st.nextToken()+"-"+st.nextToken()+"-"+st.nextToken()+"-"+st.nextToken());
 
-                                                if (description==null) {
+                                                while (description==null) {
 
                                                         StringBuffer d = new StringBuffer();
 
@@ -409,6 +409,7 @@ public class RiskUtil {
                                                         }
 
                                                         description = d.toString();
+                                                        break;
 
                                                 }
 
@@ -421,9 +422,11 @@ public class RiskUtil {
 
                                         }
                                         else if (mode == null) {
-                                            if (input.indexOf(' ')>0) {
+                                           while (input.indexOf(' ')>0) {
                                                 info.put( input.substring(0,input.indexOf(' ')) , input.substring(input.indexOf(' ')+1) );
-                                            }
+                                           break;
+                                           
+                                           }
                                         }
                                         // if "continents" or "cards" then just dont do anything in those sections
 

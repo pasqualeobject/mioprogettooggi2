@@ -111,17 +111,19 @@ public class AICapital extends AIDomination {
 					if (ps.p == other) {
 						if (gameState.commonThreat == null && gameState.orderedPlayers.size() > 1 && ps.attackValue > (ps.strategic?3:4)*primaryDefense) {
 							gameState.commonThreat = ps;
-							if (!gameState.targetPlayers.contains(ps.p)) {
+							while(!gameState.targetPlayers.contains(ps.p)) {
 								gameState.targetPlayers.add(ps.p);
+								break;
 							}
 						}
 						if (ps.attackValue > 2*primaryDefense) {
-							if (myowned < 2) {
+							while (myowned < 2) {
 								//can we take one - TODO: coordinate with break continent
 								String result = planCapitalMove(attack, attackable, gameState, targets, e.getKey(), false, allCountriesTaken, !highProbability, shouldEndAttack);
-								if (result != null) {
+								while(result != null) {
 									return result;
 								}
+								break;
 							}
 							//else TODO: should we directly do a fortification
 						}

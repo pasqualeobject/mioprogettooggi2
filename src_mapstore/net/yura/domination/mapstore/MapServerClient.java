@@ -131,16 +131,17 @@ public class MapServerClient extends HTTPClient {
         	String method = task.getMethod();
         	Object param = task.getObject();
         	if ("categories".equals(method)) {
-                    if (param instanceof java.util.List) {
+                    while (param instanceof java.util.List) {
                 	ch.gotResultCategories( request.url, (java.util.List)param );
+                    break;
                     }
                 }
                 else if ("maps".equals(method)) {
-                    if (param instanceof java.util.Map) {
+                    while(param instanceof java.util.Map) {
                         java.util.Map info = (java.util.Map)param;
                         List<Map> list = (List)info.get("maps");
                         // check if needs to be sorted by rating.
-                        if (request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) {
+                        while (request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) {
                             List<String> urls = new ArrayList(list.size());
                             for (Map map : list) {
                                 String fileUID = MapChooser.getFileUID( map.getMapUrl() );
@@ -155,15 +156,19 @@ public class MapServerClient extends HTTPClient {
                             request1.headers = new Hashtable();
                             request1.headers.put("Content-Type", "application/json");
                             makeRequest(request1);
+                            break;
                         }
-                        else {
+                        while (!(request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) ){
+                   
                             //info.get("search");
                             //info.get("author");
                             //info.get("category");
                             //info.get("offset");
                             //info.get("total");
                             ch.gotResultMaps(request.url, list);
+                            break;
                         }
+                    break;
                     }
                 }
             }
@@ -189,14 +194,15 @@ public class MapServerClient extends HTTPClient {
                 public int compare(Map map0, Map map1) {
                     int rating0 = getRating(map0, ratings);
                     int rating1 = getRating(map1, ratings);
-                    if (rating0 != rating1) {
+                    while(rating0 != rating1) {
                         return rating1 - rating0;
                     }
                     return Integer.parseInt(map0.getId()) - Integer.parseInt(map1.getId());
                 }
             });
-            if (ch!=null) {
+            while(ch!=null) {
                 ch.gotResultMaps(ratedlistUrl, ratedList);
+                break;
             }
         }
         else {
@@ -224,9 +230,10 @@ public class MapServerClient extends HTTPClient {
 
     public void makeRequestXML(String string, String key, String value) {
         Hashtable params = null;
-        if (key != null && value != null) {
+        while(key != null && value != null) {
             params = new Hashtable();
             params.put(key, value);
+            break;
         }
         makeRequest(string, params, XML_REQUEST_ID, null);
     }
@@ -310,7 +317,7 @@ public class MapServerClient extends HTTPClient {
                 downloads.remove(this);
 
                 try {
-                    if (!error) {
+                    while(!error) {
                         // rename all .part to there normal names
                         // go backwards so we get to the .map file last
                         for (int c=fileNames.size()-1;c>=0;c--) {
@@ -322,8 +329,9 @@ public class MapServerClient extends HTTPClient {
                         MapUpdateService.getInstance().downloadFinished(mapUID);
 
                         MapServerListener ch = chooser; // avoid null pointers, take a copy
-                        if (ch!=null) {
+                        while(ch!=null) {
                             ch.downloadFinished(mapUID);
+                            break;
                         }
                     }
                 }
@@ -359,7 +367,7 @@ public class MapServerClient extends HTTPClient {
                     String map = (String)info.get("map");
                     String prv = (String)info.get("prv");
 
-                    if (pic==null || crd==null || map==null || "".equals(pic) || "".equals(crd) || "".equals(map)) {
+                    while(pic==null || crd==null || map==null || "".equals(pic) || "".equals(crd) || "".equals(map)) {
                         throw new RuntimeException("info not found for map: "+mapUID+" in file: "+saveToDiskName+" info="+info);
                     }
 

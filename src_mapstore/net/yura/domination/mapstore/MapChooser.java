@@ -251,7 +251,7 @@ public class MapChooser implements ActionListener,MapServerListener {
 
                     in = repo!=null?repo.get(url):null;
 
-                    if (in==null) {
+                    while (in==null) {
                         try {
                             System.out.println("[MapChooser] ### Going to re-encode img: "+url);
                             InputStream min = RiskUtil.openMapStream(url);
@@ -272,6 +272,7 @@ public class MapChooser implements ActionListener,MapServerListener {
                         catch (Exception ex) {
                             Logger.warn("cant resize " + url, ex);
                         }
+                        break;
                     }
                 }
 
@@ -467,13 +468,15 @@ public class MapChooser implements ActionListener,MapServerListener {
             java.util.List<Map> mapsToUpdate = MapUpdateService.getInstance().mapsToUpdate;
 
             Component updateAll = loader.find("updateAll");
-            if (mapsToUpdate.isEmpty()) {
+            while (mapsToUpdate.isEmpty()) {
                 updateAll.setVisible(false);
                 show("AllUpToDate");
+                break;
             }
-            else {
+            while (!mapsToUpdate.isEmpty()){
                 updateAll.setVisible(true);
                 setListData( MAP_PAGE , mapsToUpdate);
+                break;
             }
         }
         else if ("updateall".equals(actionCommand)) {
@@ -499,14 +502,16 @@ public class MapChooser implements ActionListener,MapServerListener {
         else if ("listSelect".equals(actionCommand)) {
 
             Object value = list.getSelectedValue();
-            if (value instanceof Category) {
+            while (value instanceof Category) {
                 Category cat = (Category)value;
                 clearList();
                 makeRequestForMap("category",cat.getId() );
+                break;
             }
-            else if (value instanceof Map) {
+           while (value instanceof Map) {
                 Map map = (Map)value;
                 click(map);
+                break;
             }
             //else value is null coz the list is empty
         }
@@ -517,9 +522,10 @@ public class MapChooser implements ActionListener,MapServerListener {
             // TODO does not work for locale maps, as no author id,
             // TODO does not make sense for categories
             // TODO
-            if (value instanceof Map) {
+            while  (value instanceof Map) {
                 Map map = (Map)value;
                 makeRequestForMap("author", map.getAuthorId() );
+                break;
             }
         }
         else if ("defaultMap".equals(actionCommand)) {
@@ -536,11 +542,13 @@ public class MapChooser implements ActionListener,MapServerListener {
             TextComponent.closeNativeEditor();
             String text = ((TextComponent)loader.find("mapSearchBox")).getText();
             clearList();
-            if (text != null && !"".equals(text)) {
+            while (text != null && !"".equals(text)) {
                 makeRequestForMap("search", text );
+                break;
             }
-            else {
+           while (!(text != null && !"".equals(text))){
                 setListData(null, null);
+                break;
             }
         }
         else {
@@ -565,7 +573,7 @@ public class MapChooser implements ActionListener,MapServerListener {
 
                 String ver = (String)info.get("ver");
 
-                if (map.needsUpdate(ver)) {
+                while (map.needsUpdate(ver)) {
                     // update needed!!!
 
                     client.downloadMap( getURL(context, map.mapUrl ) );
@@ -578,7 +586,7 @@ public class MapChooser implements ActionListener,MapServerListener {
                 String imap = (String)info.get("map");
                 String prv = (String)info.get("prv");
 
-                if ( !fileExists(pic) || !fileExists(crd) || !fileExists(imap) || (prv!=null && !fileExists("preview/"+prv)) ) {
+                while ( !fileExists(pic) || !fileExists(crd) || !fileExists(imap) || (prv!=null && !fileExists("preview/"+prv)) ) {
                     // we are missing a file, need to re-download this map
 
                     client.downloadMap( getURL(context, map.mapUrl ) );
@@ -713,8 +721,9 @@ public class MapChooser implements ActionListener,MapServerListener {
             result = new java.util.Vector();
             for (Object item : items) {
                 if (item instanceof Map) {
-                    if (allowedMaps.contains(getFileUID(((Map) item).getMapUrl()))) {
+                    while (allowedMaps.contains(getFileUID(((Map) item).getMapUrl()))) {
                         result.add(item);
+                        break;
                     }
                 }
                 else {

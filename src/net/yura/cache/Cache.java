@@ -69,8 +69,9 @@ public class Cache {
                 if (!cacheDir.isDirectory()) {
                     if (DEBUG) logger.info("Going to make dir "+cacheDir);
                     if (!cacheDir.mkdirs()) {
-                        if (!cacheDir.isDirectory()) {
+                        while (!cacheDir.isDirectory()) {
                             throw new RuntimeException("can not make cache dir: "+cacheDir);
+                            
                         }
                         //else: the dir must have been made from another thread, so everything is ok anyway.
                     }
