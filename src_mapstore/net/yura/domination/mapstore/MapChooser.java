@@ -107,6 +107,42 @@ public class MapChooser implements ActionListener,MapServerListener {
         }
     }
     
+    public MapChooser(ActionListener al, java.util.List<String> localMaps, Set<String> allowedMaps) {
+    	this.al = al;
+        this.localMaps = localMaps;
+        this.allowedMaps = allowedMaps;
+
+        try {
+            loader = XULLoader.load( Midlet.getResourceAsStream("/ms_maps.xml") , this, resBundle);
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        Panel TabBar = (Panel)loader.find("TabBar");
+    }
+    
+    public void MapC()
+    {
+    	if (TabBar != null) {
+
+            int count = 0;
+            if (allowedMaps != null)
+                for (String localMap : localMaps)
+                    if (allowedMaps.contains(localMap))
+                        count++;
+            if (allowedMaps != null && count == allowedMaps.size())
+                TabBar.setVisible(false);
+            else {
+                java.util.List buttons = TabBar.getComponents();
+                Icon on = new Icon("/ms_bar_on.png");
+                Icon off = new Icon("/ms_bar_off.png");
+                int w = off.getIconWidth() / buttons.size();
+                for (int c=0;c<buttons.size();c++) {
+                    RadioButtonMethod();
+                }
+            }
+        }
+    }
     
     public MapChooser(ActionListener al, java.util.List<String> localMaps, Set<String> allowedMaps) {
         this.al = al;
@@ -121,26 +157,8 @@ public class MapChooser implements ActionListener,MapServerListener {
         }
 
         Panel TabBar = (Panel)loader.find("TabBar");
-        if (TabBar != null) {
-
-            int count = 0;
-            if (allowedMaps != null) {
-                for (String localMap : localMaps)
-                    if (allowedMaps.contains(localMap))
-                        count++;
-            }
-            if (allowedMaps != null && count == allowedMaps.size())
-                TabBar.setVisible(false);
-            else {
-                java.util.List buttons = TabBar.getComponents();
-                Icon on = new Icon("/ms_bar_on.png");
-                Icon off = new Icon("/ms_bar_off.png");
-                int w = off.getIconWidth() / buttons.size();
-                for (int c=0;c<buttons.size();c++) {
-                    RadioButtonMethod();
-                }
-            }
-        }
+        
+        MapC();
         
         applied();
         
