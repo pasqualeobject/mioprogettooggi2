@@ -246,7 +246,7 @@ public class MapChooser implements ActionListener,MapServerListener {
     /**
      * method
      */
-    public void IconGetx()
+    public static void IconGetx()
     {
     	String url = getURL(context, iconUrl);
     	System.out.println("[MapChooser] ### Going to re-encode img: "+url);
@@ -262,58 +262,64 @@ public class MapChooser implements ActionListener,MapServerListener {
         // TODO we should only cache if we are sure it can be opened as a image
         in = new ByteArrayInputStream(bytes);
     }
+    
+    public static void methodAnoth()
+    {
+    	in = repo!=null?repo.get(url):null;
+
+		while (in==null) {
+			try {
+
+				IconGetx();
+
+			}
+			catch (OutOfMemoryError err) { // what can we do?
+					Logger.info("cant resize " + url, err);
+			}
+			catch (Exception ex) {
+				Logger.warn("cant resize " + url, ex);
+			}
+			break;
+    
+    public static void getIconXY()
+    {
+    	aicon = iconCache.newIcon(key);
+
+		String url = getURL(context, iconUrl);
+
+		// if this is a remote file
+		if ( url.indexOf(':')>0 ) getRemoteImage(key, url, c);
+		// if this is a locale file
+		else {
+			InputStream in=null;
+			if (url.startsWith("preview/"))
+				try {
+					in = RiskUtil.openMapStream( url ); // "preview/"+prv
+				}
+			catch (Exception ex) {
+				Logger.warn("cant open " + url, ex);
+			}
+
+			else {
+				//
+				methodAnoth();
+				}
+			}
+
+			if (in!=null)
+				gotImg(key, in);
+    }
 
     /**
      * @param key can be a Map or a Category
      */
     public static Icon getIconForMapOrCategory1(Object key,String context,String iconUrl,MapServerClient c) {
-        Icon aicon = iconCache.get( key );
-        if (aicon==null) {
-            aicon = iconCache.newIcon(key);
-
-            String url = getURL(context, iconUrl);
-
-            // if this is a remote file
-            if ( url.indexOf(':')>0 ) getRemoteImage(key, url, c);
-            // if this is a locale file
-            else {
-                InputStream in=null;
-
-                if (url.startsWith("preview/")) {
-                    try {
-                        in = RiskUtil.openMapStream( url ); // "preview/"+prv
-                    }
-                    catch (Exception ex) {
-                        Logger.warn("cant open " + url, ex);
-                    }
-                }
-
-                else {
-
-                    in = repo!=null?repo.get(url):null;
-
-                    while (in==null) {
-                        try {
-                        	
-                        	IconGetx();
-                            
-                        }
-                        catch (OutOfMemoryError err) { // what can we do?
-                            Logger.info("cant resize " + url, err);
-                        }
-                        catch (Exception ex) {
-                            Logger.warn("cant resize " + url, ex);
-                        }
-                        break;
-                    }
-                }
-
-                if (in!=null)
-                    gotImg(key, in);
-            }
-
-        }
-        return aicon;
+    	Icon aicon = iconCache.get( key );
+    	if (aicon==null) {
+    		getIconXY();
+    		}
+    	}
+    	return aicon;
     }
 
     private static void gotImg(Object obj,InputStream in) {
