@@ -87,13 +87,10 @@ public class MapRenderer extends DefaultListCellRenderer {
 
     public Component getListCellRendererComponent(Component list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         Component c = super.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
-
         this.list = list;
-
         line2 = null; // reset everything
         map = null;
         String iconUrl=null;
-
         if (value instanceof Category) {
             Category category = (Category)value;
 
@@ -103,54 +100,48 @@ public class MapRenderer extends DefaultListCellRenderer {
         }
         else if (value instanceof Map) {
             map = (Map)value;
-
             line1 = map.getName();
-
             String author = map.getAuthorName();
-            if (author!=null && !"".equals(author)) {
-                line2 = TranslationBundle.getBundle().getString("mapchooser.by").replaceAll("\\{0\\}", author);
-            }
-            String description = map.getDescription();
-            if (description!=null && !"".equals(description)) {
-                line2 = (line2==null?"":line2+"\n")+description;
-            }
-
-            if (line2!=null) {
-                line2 = getFirstLines(line2,TOTAL_LINES_OF_TEXT-1);
-            }
+            line2 = createLine(author);
 
             iconUrl = map.getPreviewUrl();
         }
-        // else just do nothing
-
-        //iconUrl = "http://www.imagegenerator.net/clippy/image.php?question="+map.getName();
-
+        checkIconUrl(iconUrl);
+        return c;
+    }
+    private void checkIconUrl(String iconUrl) {
         if (iconUrl!=null) {
             setIcon( MapChooser.getIconForMapOrCategory(value,context,iconUrl,chooser.client) );
         }
         else {
             System.out.println("[MapRenderer] No PreviewUrl for map or category: "+value);
         }
-
-        return c;
     }
-
+    private String createLine(String author) {
+        Sring line = null;
+        if (author!=null && !"".equals(author)) {
+            line = TranslationBundle.getBundle().getString("mapchooser.by").replaceAll("\\{0\\}", author);
+        }
+        String description = map.getDescription();
+        if (description!=null && !"".equals(description)) {
+            line = (line == null ? "":line + "\n") + description;
+        }
+        if (line != null) {
+            line = getFirstLines(line2,TOTAL_LINES_OF_TEXT-1);
+        }
+        return line;
+    }
     public void paintComponent(Graphics2D g) {
-
         Icon icon = getIcon();
         if (icon==null || icon.getImage()==null) {
             setIcon(loading);
         }
-
         super.paintComponent(g); // paint the icon
-
         int textx = padding+getIcon().getIconWidth()+gap;
-
         g.setFont( font );
         g.setColor( getForeground() );
         g.drawString(line1, textx, (line2!=null)?padding:(getHeight()-font.getHeight())/2);
-
-        if (line2!=null) {
+        if (line2 != null) {
             int state = getCurrentState();
             // if NOT focused or selected
             if ( (state&Style.FOCUSED)==0 && (state&Style.SELECTED)==0 ) {
@@ -158,38 +149,31 @@ public class MapRenderer extends DefaultListCellRenderer {
             }
             g.drawString(line2, textx , padding + getFont().getHeight() + gap);
         }
-
+        setG(g);
+        setIcon(icon);
+    }
+    private void setG(Graphics2D g) {
         if (map!=null) {
-
             int gap = 5;
-
             String mapUID = MapChooser.getFileUID( map.getMapUrl() );
-
-            if ( chooser.client.isDownloading( mapUID ) ) { // we need to check for this first as we may have it and also be updating it
-
-                // position spinner in top right corner
-                int x = getWidth()-bar.getWidth()-gap;
-                int y = gap;
-
-                g.translate(x, y);
-
-                bar.paintComponent(g);
-
-                g.translate(-x, -y);
-
-
-                // its ok to register more than once
-                Animation.registerAnimated(this);
-            }
-            else if ( chooser.willDownload( map ) ) {
-                g.drawImage(download, getWidth()-download.getWidth()-gap, gap);
-            }
-            else {
-                g.drawImage(play, getWidth()-play.getWidth()-gap, gap);
+            switch(chooser) {
+                case chooser.client.isDownloading(mapUID):
+                    int x = getWidth()-bar.getWidth()-gap;
+                    int y = gap;
+                    g.translate(x, y);
+                    bar.paintComponent(g);
+                    g.translate(-x, -y);
+                    // its ok to register more than once
+                    Animation.registerAnimated(this);
+                    break;
+                case chooser.willDownload(map):
+                    g.drawImage(download, getWidth()-download.getWidth()-gap, gap);
+                    break;
+                default:
+                    g.drawImage(play, getWidth()-play.getWidth()-gap, gap);
+                    break;
             }
         }
-
-        setIcon(icon);
     }
 
     public int getFixedCellHeight() {

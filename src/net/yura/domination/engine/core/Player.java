@@ -238,7 +238,10 @@ public class Player implements Serializable {
 	cardsOwned.removeElementAt(0);
         return c;
     }
-
+    
+    /**
+     * Costant NOAFORCARD
+     */
     public static final int noaFORcard = 2;
 
     /**

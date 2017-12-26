@@ -585,18 +585,14 @@ public class CollisionPhysics {
                lineX1, timeLimit, response);
          // Need to confirm that the point of impact is within the line-segment
          double impactY = response.getImpactY(pointY, speedY);
-         if (!(impactY >= lineY1 && impactY <= lineY2 || impactY >= lineY2 && impactY <= lineY1)) {
-            response.reset();  // no collision
-         }
+         checkImpactLine(impactY,lineY2,lineY1,response);
          return;
       } else if (lineY1 == lineY2) {  // Horizontal line
          pointIntersectsLineHorizontal(pointX, pointY, speedX,
               speedY, radius, lineY1, timeLimit, response);
          // Need to confirm that the point of impact is within the line-segment
          double impactX = response.getImpactX(pointX, speedX);
-         if (!(impactX >= lineX1 && impactX <= lineX2 || impactX >= lineX2 && impactX <= lineX1)) {
-            response.reset();
-         }
+         checkImpactLineX(impactX,lineX2,lineX1,response);
          return;
       }
 
@@ -612,11 +608,21 @@ public class CollisionPhysics {
       // Accept 0 < t <= timeLimit
       if (t > 0 && t <= timeLimit && lambda >=0 && lambda <= 1) {
          // Call helper method to compute response.
-         pointIntersectsLineResponse(pointX, pointY, speedX, speedY, 
-                  lineX1, lineY1, lineX2, lineY2, response, t);
+         pointIntersectsLineResponse(pointX, pointY, speedX, speedY,
+                 lineX1, lineY1, lineX2, lineY2, response, t);
+      }
+
+   }
+   private static void checkImpactLine(double impactY,float lineY2,float lineY1,CollisionResponse response) {
+      if (!(impactY >= lineY1 && impactY <= lineY2 || impactY >= lineY2 && impactY <= lineY1)) {
+         response.reset();  // no collision
       }
    }
-   
+   private static void checkImpactLineX(double impactX,float lineX2, float lineX1,CollisionResponse response) {
+      if (!(impactX >= lineX1 && impactX <= lineX2 || impactX >= lineX2 && impactX <= lineX1)) {
+         response.reset();
+      }
+   }
    /**
     * Detect collision for a moving point hitting hitting an arbitrary line segment,
     * within the given timeLimit. Consider both the end points.

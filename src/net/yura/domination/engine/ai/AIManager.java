@@ -48,37 +48,38 @@ public class AIManager {
     }
 
     public String getOutput(RiskGame game,int type) {
-
             AI usethisAI=ais.get(type);
-
             if (usethisAI==null) {
                 throw new IllegalArgumentException("can not find ai for type "+type);
             }
-
             usethisAI.setGame(game);
-
-            String output=null;
-
-            switch ( game.getState() ) {
-                    case RiskGame.STATE_TRADE_CARDS:	output = usethisAI.getTrade(); break;
-                    case RiskGame.STATE_PLACE_ARMIES:	output = usethisAI.getPlaceArmies(); break;
-                    case RiskGame.STATE_ATTACKING:	output = usethisAI.getAttack(); break;
-                    case RiskGame.STATE_ROLLING:	output = usethisAI.getRoll(); break;
-                    case RiskGame.STATE_BATTLE_WON:	output = usethisAI.getBattleWon(); break;
-                    case RiskGame.STATE_FORTIFYING:	output = usethisAI.getTacMove(); break;
-                    case RiskGame.STATE_SELECT_CAPITAL:	output = usethisAI.getCapital(); break;
-                    case RiskGame.STATE_DEFEND_YOURSELF:output = usethisAI.getAutoDefendString(); break;
-                    case RiskGame.STATE_END_TURN:	output = "endgo"; break;
-
-                    case RiskGame.STATE_GAME_OVER: throw new IllegalStateException("AI error: game is over");
-                    default: throw new IllegalStateException("AI error: unknown state "+ game.getState() );
-            }
-
-            //if (output==null) { throw new NullPointerException("AI ERROR!"); }
+            String output = getStateGame(game,usethisAI);
 
             return output;
     }
-
+    private String getStateGame(RiskGame game, AI usethisAI) {
+        HashMap<Integer, String> gameState = new HashMap<>();
+        String output = null;
+        gameState.put(RiskGame.STATE_TRADE_CARDS,usethisAI.getTrade());
+        gameState.put(RiskGame.STATE_PLACE_ARMIES,usethisAI.getPlaceArmies());
+        gameState.put(RiskGame.STATE_ATTACKING,usethisAI.getAttack());
+        gameState.put(RiskGame.STATE_ROLLING,usethisAI.getRoll());
+        gameState.put(RiskGame.STATE_BATTLE_WON,usethisAI.getBattleWon());
+        gameState.put(RiskGame.STATE_FORTIFYING,usethisAI.getTacMove());
+        gameState.put(RiskGame.STATE_SELECT_CAPITAL,usethisAI.getCapital());
+        gameState.put(RiskGame.STATE_DEFEND_YOURSELF,usethisAI.getAutoDefendString());
+        gameState.put(RiskGame.STATE_END_TURN,"endgo");
+        gameState.put(RiskGame.STATE_GAME_OVER,"AI error: game is over");
+        if(gameState.containsKey(game.getState())) {
+            output = gameState.get(game.getState());
+        }
+        else if(gameState.containsKey(game.getState()) && game.getState() == RiskGame.STATE_GAME_OVER)
+            throw new IllegalStateException(gameState.get(game.getState()));
+        else {
+            throw new IllegalStateException("AI error: unknown state "+ game.getState());
+        }
+        return output;
+    }
     public int getTypeFromCommand(String command) {
         for (AI ai:ais.values()) {
             if (ai.getCommand().equals(command)) {

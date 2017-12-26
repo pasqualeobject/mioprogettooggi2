@@ -56,27 +56,17 @@ public class Cache {
     }
 
     public void put(String key, byte[] value) {
-
         File file = getFileName(key);
         if (file.exists()) {
             logger.log(Level.WARNING, "already has file: {0}", key);
         }
         else {
             try {
-
-                if (DEBUG) logger.log(Level.INFO, "saving to cache: {0}", key);
-
+                logger.log(Level.INFO, "saving to cache: {0}", key);
                 if (!cacheDir.isDirectory()) {
-                    if (DEBUG) logger.info("Going to make dir "+cacheDir);
-                    if (!cacheDir.mkdirs()) {
-                        while (!cacheDir.isDirectory()) {
-                            throw new RuntimeException("can not make cache dir: "+cacheDir);
-                            
-                        }
-                        //else: the dir must have been made from another thread, so everything is ok anyway.
-                    }
+                    logger.info("Going to make dir "+cacheDir);
+                    checkCacheDir();
                 }
-
                 FileOutputStream out = new FileOutputStream(file);
                 out.write(value);
                 out.close();
@@ -87,23 +77,28 @@ public class Cache {
                 if (exists) {
                     deleted = file.delete();
                 }
-                logger.log(Level.WARNING, 
+                logger.log(Level.WARNING,
                         "failed to save data to file: "+file+
-                        " exists="+exists+
-                        " deleted="+deleted+
-                        " key="+key+
-                        " inDir="+cacheDir+
-                        " exists="+cacheDir.exists()+
-                        " isDir="+cacheDir.isDirectory(), ex);
+                                " exists="+exists+
+                                " deleted="+deleted+
+                                " key="+key+
+                                " inDir="+cacheDir+
+                                " exists="+cacheDir.exists()+
+                                " isDir="+cacheDir.isDirectory(), ex);
             }
         }
     }
-
+    private void checkCacheDir() {
+        if (!cacheDir.mkdirs()) {
+            while (!cacheDir.isDirectory()) {
+                throw new RuntimeException("can not make cache dir: "+cacheDir);
+            }
+        }
+    }
     public InputStream get(String key) {
         File file = getFileName(key);
         if (file.exists()) {
             try {
-
                 if (DEBUG) logger.log(Level.INFO, "getting from cache: {0}", key);
 
                 file.setLastModified(System.currentTimeMillis());

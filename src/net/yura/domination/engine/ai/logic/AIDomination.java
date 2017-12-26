@@ -31,7 +31,7 @@ import net.yura.domination.engine.core.Statistic;
  * fear reprisals
  */
 public class AIDomination extends AISubmissive {
-	
+
 	static final int MAX_AI_TURNS = 300;
 	/**
 	 * these are the Costant of Level
@@ -46,13 +46,13 @@ public class AIDomination extends AISubmissive {
 	 */
 	public final static int PLAYER_AI_EASY = 1;
 
-    protected final int type;
+	protected final int type;
 	private boolean eliminating;
 	private Continent breaking;
 
-    public AIDomination(int type) {
-        this.type = type;
-    }
+	public AIDomination(int type) {
+		this.type = type;
+	}
 
 	/**
 	 * Contains quick information about the player
@@ -173,196 +173,262 @@ public class AIDomination extends AISubmissive {
 		if (((this.type == AIDomination.PLAYER_AI_EASY && game.NoEmptyCountries() && r.nextInt(6) != 0) //mostly random placement
 				|| (game.getSetupDone() && this.type == AIDomination.PLAYER_AI_AVERAGE && r.nextBoolean()))) { //use a random placement half of the time to make the player less aggressive
 			return simplePlacement();
-	    }
+		}
 		if ( game.NoEmptyCountries() ) {
 			return plan(false);
 		}
 		return findEmptyCountry();
-    }
+	}
 
 	private String simplePlacement() {
-		if ( !game.NoEmptyCountries()) {
-		    return "autoplace";
-		}
+		checkNoEmptyCountries();
+
 		List<Country> t = player.getTerritoriesOwned();
 		List<Country> n = findAttackableTerritories(player, false);
 		List<Country> copy = new ArrayList<Country>(n);
 		Country c = null;
-		if (n.isEmpty() || t.size() == 1) {
-			c = t.get(0);
-		    return getPlaceCommand(c, player.getExtraArmies());
-		}
-		if (n.size() == 1) {
-			c = n.get(0);
-			return getPlaceCommand(c, player.getExtraArmies());
-		}
+		checkEmptyList(n,t);
 		HashSet<Country> toTake = new HashSet<Country>();
 		Country fallback = null;
 		Country overload = null;
+		String getPlace = null;
 		int additional = 1;
-		while (!n.isEmpty()) {
-			c = n.remove( r.nextInt(n.size()) );
-			List<Country> cn = c.getNeighbours();
-			for (int i = 0; i < cn.size(); i++) {
-				Country other = cn.get(i);
-				if (other.getOwner() == player || toTake.contains(other)) {
-					continue;
+		c = n.remove( r.nextInt(n.size()) );
+		List<Country> cn = c.getNeighbours();
+		for (int i = 0; i < cn.size() || !n.isEmpty(); i++) {
+			Country other = cn.get(i);
+			int diff = checkDiffValue(c, other);
+			if (diff >= 0) {
+				if (diff < other.getArmies() * 3) {
+					overload = c;
+					additional = other.getArmies() * 3 - diff;
 				}
-				int diff = 0;
-				if (game.getMaxDefendDice() == 2) {
-					diff = c.getArmies() - 2 - (3*other.getArmies()/2 + other.getArmies()%2);
-				} else {
-					diff = c.getArmies() - 2 - 2*other.getArmies();
-				}
-
-				if (diff >= 0) {
-					if (diff < other.getArmies()*3) {
-						//we have enough, but try to overload to be safe
-						overload = c;
-						additional = other.getArmies()*3 - diff;
-					}
-					toTake.add(other);
-					continue;
-				}
-				if (-diff <= player.getExtraArmies()) {
-					return getPlaceCommand(c, -diff);
-				}
-				if (fallback == null) {
-					fallback = c;
-					additional = Math.max(1, -diff);
-				}
+				toTake.add(other);
 			}
-		}
-		if (fallback == null) {
-			if (overload != null) {
-				return getPlaceCommand(overload, additional);
+			if (-diff <= player.getExtraArmies()) {
+				getPlace = getPlaceCommand(c, -diff);
 			}
-			//we're fully overloaded, just place the rest
-			return getPlaceCommand(randomCountry(copy), player.getExtraArmies());
+			fallback = c;
+			additional = Math.max(1, -diff);
+			if (overload != null)
+				getPlace = getPlaceCommand(overload, additional);
+			getPlace = getPlaceCommand(randomCountry(copy), player.getExtraArmies());
 		}
-		return getPlaceCommand(fallback, additional);
+		return getPlace;
 	}
-
-    /**
-     * ai looks at all the continents and tries to see which one it should place on
-     * first it simply looks at the troops on each continent
-     * then it looks at each player's potential moves.
+	private void checkNoEmptyCountries() {
+		if (!game.NoEmptyCountries()) {
+			throw new AiDominationException("autoplace");
+		}
+	}
+	private String checkEmptyList(List<Country> list, List<Country> list2) {
+		Country c = null;
+		if (list.isEmpty() || list2.size() == 1) {
+			c = list2.get(0);
+			return getPlaceCommand(c, player.getExtraArmies());
+		}
+		if (list.size() == 1) {
+			c = list2.get(0);
+			return getPlaceCommand(c, player.getExtraArmies());
+		}
+		return null;
+	}
+	private int checkDiffValue(Country c, Country other) {
+		int diff;
+		if (game.getMaxDefendDice() == 2) {
+			diff = c.getArmies() - 2 - (3*other.getArmies()/2 + other.getArmies()%2);
+		} else {
+			diff = c.getArmies() - 2 - 2*other.getArmies();
+		}
+		return diff;
+	}
+	private String checkFallback(Country fallback, Country overload, int additional, List<Country> copy) {
+		String getPlace = null;
+		if(fallback == null) {
+			if (overload != null) {
+				getPlace = getPlaceCommand(overload, additional);
+			}
+			getPlace = getPlaceCommand(randomCountry(copy), player.getExtraArmies());
+		}
+		else
+			getPlace = getPlaceCommand(fallback, additional);
+		return getPlace;
+	}
+	/**
+	 * ai looks at all the continents and tries to see which one it should place on
+	 * first it simply looks at the troops on each continent
+	 * then it looks at each player's potential moves.
 	 */
 	private String findEmptyCountry() {
 		Continent[] cont = game.getContinents();
-
+        String getPlace;
 		double check = -Double.MAX_VALUE;
 		Country toPlace = null;
-		Map<Player, Integer> players = new HashMap<Player, Integer>();
-		for (int i = 0; i < this.game.getPlayers().size(); i++) {
-			players.put((Player) this.game.getPlayers().get(i), Integer.valueOf(i));
-		}
-
+		Map<Player, Integer> players = players();
 		List<Continent> conts = new ArrayList<Continent>(Arrays.asList(cont));
 		Collections.sort(conts, new Comparator<Continent>() {
-
 			@Override
 			public int compare(Continent arg0, Continent arg1) {
 				return (int)Math.signum(getContinentValue(arg1) - getContinentValue(arg0));
 			}
 		});
-
 		for (int i = 0; i < conts.size(); i++) {
 			Continent co = conts.get(i);
-
 			List<Country> ct = co.getTerritoriesContained();
 			int bestCountryScore = 0;
-
-			boolean hasFree = false;
 			Country preferedCountry = null;
 			int[] troops = new int[game.getPlayers().size()];
-
 			boolean hasPlacement = false;
 			Player otherOwner = null;
+
 			for (int j = 0; j < ct.size(); j++) {
 				Country country = ct.get(j);
+
 				if (country.getOwner() == null) {
-					hasFree = true;
 					int countryScore = scoreCountry(country);
-					if (preferedCountry == null || countryScore < bestCountryScore || (countryScore == bestCountryScore && r.nextBoolean())) {
+					if (preferedCountry == null || countryScore < bestCountryScore ||
+                            (countryScore == bestCountryScore && r.nextBoolean())) {
 						bestCountryScore = countryScore;
-						preferedCountry = country;
+                        preferedCountry = country;
 					}
 				} else {
 					Integer index = players.get(country.getOwner());
 					troops[index.intValue()]++;
-					if (country.getOwner() == player) {
-						hasPlacement = true;
-					} else if (otherOwner == null) {
-						otherOwner = country.getOwner();
-					} else if (otherOwner != country.getOwner() && r.nextBoolean()) {
-						hasPlacement = true; //this is contested
-					}
+					Object[] arrayPlacementOwner = checkPlaceOwner(country.getOwner(),otherOwner);
+					hasPlacement = (boolean)arrayPlacementOwner[0];
+                    otherOwner = (Player)arrayPlacementOwner[1];
 				}
 			}
-
-			if (!hasFree) {
-				continue;
-			}
-
-			if (type == PLAYER_AI_HARD && !hasPlacement) {
-				return getPlaceCommand(preferedCountry, 1);
-			}
-
+			getPlace = checkTypePlacement(hasPlacement, preferedCountry);
 			/* Calculate the base value of that continent */
 			double continentValue = getContinentValue(co);
-
-			for (int j = 0; j < troops.length; j++) {
-				int numberofEnemyUnits = 0;
-				int territorynum = 1;
-				int numberOfEnemies = 0;
-				for (int k = 0; k < troops.length; k++) {
-					if (j == k) {
-						territorynum += troops[k];
-					} else {
-						numberofEnemyUnits += troops[k];
-						if (troops[k] > 0) {
-							numberOfEnemies++;
-						}
-					}
-				}
-
-				double score = territorynum / Math.max(1d, (numberofEnemyUnits * numberOfEnemies));
-				score *= continentValue;
-				score /= bestCountryScore;
-
-				Player p = (Player)game.getPlayers().get(j);
-
-				if (p != this.player) {
-					//always block
-					if (territorynum == ct.size()) {
-						toPlace = preferedCountry;
-						break ;
-					}
-				}
-
-				if (check <= score) {
-					check = score;
-					toPlace = preferedCountry;
-				} else if (toPlace == null) {
-					toPlace = preferedCountry;
-				}
-			}
+            Object[] arrayPlace = checkFor(troops,continentValue,bestCountryScore,ct.size(),preferedCountry,check);
+			toPlace = (Country)arrayPlace[0];
+			check = (int)arrayPlace[1];
 		}
-
-		if (toPlace == null) {
-			return "autoplace";
-		}
-		return getPlaceCommand(toPlace, 1);
+        checkPlace(toPlace);
+		getPlace = getPlaceCommand(toPlace, 1);
+		return getPlace;
 	}
+	private Object[] checkPlaceOwner(Player owner, Player otherOwner) {
+	    final int HAS_PLACEMENT = 0;
+	    final int OTHER_OWNER = 1;
+	    Object[] array = new Object[2];
+        if (owner == player || otherOwner != owner && r.nextBoolean()) {
+            array[HAS_PLACEMENT] = true;
+        } else if (otherOwner == null) {
+            array[OTHER_OWNER] = owner;
+        }
+        return array;
+    }
+	private String checkTypePlacement(boolean hasPlacement, Country preferedCountry) {
+	    String s = null;
+        if (type == PLAYER_AI_HARD && !hasPlacement) {
+            s = getPlaceCommand(preferedCountry, 1);
+        }
+        return s;
+    }
+    private HashMap<Player, Integer> players() {
+        HashMap<Player, Integer> players = new HashMap<>();
+        for (int i = 0; i < this.game.getPlayers().size(); i++)
+            players.put((Player) this.game.getPlayers().get(i), Integer.valueOf(i));
+        return players;
+    }
+	private Object[] checkFor(int[] troops, double continentValue,
+                              int bestCountryScore, int ct, Country preferedCountry, double check) {
+        final int TO_PLACE = 0;
+        final int CHECK = 1;
+        Object[] array = new Object[2];
+        for (int j = 0; j < troops.length; j++) {
+            int[] arrayEnemyTerritory = takeEnemyTerritory(troops,j);
+            int numberofEnemyUnits = arrayEnemyTerritory[0];
+            int territorynum = arrayEnemyTerritory[1];
+            int numberOfEnemies = arrayEnemyTerritory[2];
+
+            double score = territorynum / Math.max(1d, (numberofEnemyUnits * numberOfEnemies));
+            score *= continentValue;
+            score /= bestCountryScore;
+
+            Object[] arrayCheckPlace;
+            arrayCheckPlace = checkPlace(preferedCountry, territorynum, ct, score,check);
+            array[TO_PLACE] = arrayCheckPlace[0];
+            array[CHECK] = arrayCheckPlace[1];
+        }
+        return array;
+    }
+    private void checkPlace(Country toPlace) {
+	    if(toPlace == null)
+	        throw new AiDominationException("autoplace");
+    }
+	private int[] takeEnemyTerritory(int[] troops, int j) {
+        final int NUMBER_OF_ENEMY_UNITS = 0;
+        final int TERRITORYNUM = 1;
+        final int NUMBER_OF_ENEMIES = 2;
+        int[] array = new int[3];
+        for (int k = 0; k < troops.length; k++) {
+            if (j == k) {
+                array[TERRITORYNUM] += troops[k];
+            } else {
+                array[NUMBER_OF_ENEMY_UNITS] += troops[k];
+                if (troops[k] > 0) {
+                    array[NUMBER_OF_ENEMIES]++;
+                }
+            }
+        }
+        return array;
+    }
+    private Object[] checkPlace(Country preferedCountry,int territorynum,int ct,double score, double check) {
+	    final int TO_PLACE = 0;
+	    final int CHECK = 1;
+	    Object[] array = new Object[2];
+        if(territorynum == ct)
+            array[TO_PLACE] = preferedCountry;
+
+        if (check <= score) {
+            array[CHECK] = score;
+            array[TO_PLACE] = preferedCountry;
+        } else if (array[TO_PLACE] == null) {
+            array[TO_PLACE] = preferedCountry;
+        }
+        return array;
+    }
 
 	/**
 	 * Gives a score (lower is better) to a country
+	 * 
 	 */
-	protected int scoreCountry(Country country) {
-		final int n = country.getIncomingNeighbours().size();
-		int countryScore = n + 6; //normalize so that 1 is the best score for an empty country
-		if (country.getArmies() > 0) {
+    protected country_cn() {
+		Country cn = country.getIncomingNeighbours().get(k);
+		if (cn.getOwner() == player) {
+			neighborBonus-=cn.getArmies();
+			neighbors++;
+		} else if (cn.getOwner() != null) {
+			countryScore+=(cn.getArmies()/2 + cn.getArmies()%2);
+		}
+	
+    }
+    
+    protected country_cn2() {
+
+		Country cn = (Country) country.getNeighbours().get(k);
+		if (cn.getOwner() == player) {
+			neighborBonus-=cn.getArmies();
+			neighbors++;
+		} else if (cn.getOwner() == null && cn.getContinent() != country.getContinent()) {
+			countryScore--;
+		}
+	
+    }
+    
+    protected game_setup(){
+		countryScore -= Math.pow(neighbors, 2);
+		if (!game.getSetupDone()) {
+			countryScore = Math.max(1, countryScore);
+		}
+	
+    }
+   protected country_score(){
+    	if (country.getArmies() > 0) {
 			countryScore += n;
 			countryScore -= country.getArmies();
 		}
@@ -372,38 +438,32 @@ public class AIDomination extends AISubmissive {
 		if (game.getSetupDone() && country.getCrossContinentNeighbours().size() == 1) {
 			countryScore -= 3;
 		}
+    }
+   
+	protected int scoreCountry(Country country) {
+		final int n = country.getIncomingNeighbours().size();
+		int countryScore = n + 6; //normalize so that 1 is the best score for an empty country
+		
+		country_score();
+		
 		int neighborBonus = 0;
 		int neighbors = 0;
 		//defense
 		for (int k = 0; k < n; k++) {
-			Country cn = country.getIncomingNeighbours().get(k);
-			if (cn.getOwner() == player) {
-				neighborBonus-=cn.getArmies();
-				neighbors++;
-			} else if (cn.getOwner() != null) {
-				countryScore+=(cn.getArmies()/2 + cn.getArmies()%2);
-			}
+			country_cn();
 		}
 		int n1 = country.getNeighbours().size();
 		//attack
 		for (int k = 0; k < n1; k++) {
-			Country cn = (Country) country.getNeighbours().get(k);
-			if (cn.getOwner() == player) {
-				neighborBonus-=cn.getArmies();
-				neighbors++;
-			} else if (cn.getOwner() == null && cn.getContinent() != country.getContinent()) {
-				countryScore--;
-			}
+			country_cn2();
 		}
 
 		neighbors = neighbors/2 + neighbors%2;
 		countryScore += neighborBonus/4 + neighborBonus%2;
 
 		if (!game.getSetupDone() || neighbors > 1) {
-			countryScore -= Math.pow(neighbors, 2);
-			if (!game.getSetupDone()) {
-				countryScore = Math.max(1, countryScore);
-			}
+			game_setup();
+			
 		}
 		return countryScore;
 	}
@@ -473,7 +533,7 @@ public class AIDomination extends AISubmissive {
 	}
 
 	protected String plan(boolean attack, List<Country> attackable, GameState gameState,
-			Map<Country, AttackTarget> targets) {
+						  Map<Country, AttackTarget> targets) {
 		boolean shouldEndAttack = false;
 		boolean pressAttack = false;
 		int extra = player.getExtraArmies();
@@ -500,7 +560,7 @@ public class AIDomination extends AISubmissive {
 							&& gameState.me.playerValue < gameState.orderedPlayers.get(0).playerValue
 							&& shouldEndAttack
 							&& et.ps.armies > gameState.me.armies*.4
-						    && et.ps.armies - getCardEstimate(et.ps.p.getCards().size()) > (totalCards>RiskGame.MAX_CARDS?1:(gameState.me.playerValue/gameState.orderedPlayers.get(0).playerValue)) * getCardEstimate(player.getCards().size() + et.ps.p.getCards().size())) {
+							&& et.ps.armies - getCardEstimate(et.ps.p.getCards().size()) > (totalCards>RiskGame.MAX_CARDS?1:(gameState.me.playerValue/gameState.orderedPlayers.get(0).playerValue)) * getCardEstimate(player.getCards().size() + et.ps.p.getCards().size())) {
 						toEliminate.remove(i--);
 						continue;
 					}
@@ -520,7 +580,7 @@ public class AIDomination extends AISubmissive {
 			String objective = planObjective(attack, attackable, gameState, targets, allCountriesTaken, pressAttack, shouldEndAttack, true);
 			while(objective != null) {
 				return objective;
-				
+
 			}
 
 			if (type == PLAYER_AI_HARD && gameState.orderedPlayers.size() > 1
@@ -530,7 +590,7 @@ public class AIDomination extends AISubmissive {
 					if (!attack) {
 						//redo the target search using low probability
 						HashMap<Country, AttackTarget> newTargets = searchAllTargets(true, attackable, gameState);
-						
+
 						for (int i = 0; i < toEliminate.size(); i++) {
 							EliminationTarget et = toEliminate.get(i);
 							//reset the old targets - the new ones contain the new remaining estimates
@@ -693,15 +753,15 @@ public class AIDomination extends AISubmissive {
 	}
 
 	protected String planObjective(boolean attack, List<Country> attackable,
-			GameState gameState, Map<Country, AttackTarget> targets,
-			Set<Country> allCountriesTaken, boolean pressAttack, boolean shouldEndAttack, boolean highProbability) {
+								   GameState gameState, Map<Country, AttackTarget> targets,
+								   Set<Country> allCountriesTaken, boolean pressAttack, boolean shouldEndAttack, boolean highProbability) {
 		return null;
 	}
 
 	protected boolean shouldProactivelyFortify(Continent c, boolean attack,
-			List<Country> attackable, GameState gameState,
-			Map<Country, AttackTarget> targets, boolean pressAttack,
-			List<EliminationTarget> continents) {
+											   List<Country> attackable, GameState gameState,
+											   Map<Country, AttackTarget> targets, boolean pressAttack,
+											   List<EliminationTarget> continents) {
 		return type == PLAYER_AI_HARD && !isIncreasingSet() && eliminating
 				&& gameState.commonThreat == null && !attack && ensureRiskCard(attackable, gameState, targets, pressAttack, continents)==null;
 	}
@@ -709,9 +769,38 @@ public class AIDomination extends AISubmissive {
 	protected boolean isIncreasingSet() {
 		return game.getCardMode() == RiskGame.CARD_INCREASING_SET && (type != PLAYER_AI_HARD || game.getNewCardState() > 12) && (!game.getCards().isEmpty() || game.isRecycleCards());
 	}
+	
+	private target_null() {
+		int route = findBestRoute(attackable, gameState, pressAttack, null, at, game.getSetupDone()?(Player) gameState.targetPlayers.get(0):null, targets);
+		if (target == null || gameState.targetPlayers.contains(at.targetCountry.getOwner()) || r.nextBoolean()) {
+			bestRoute = route;
+			target = at;
+	}
+	}
+		
+	private attack_target() {
 
+		boolean  target = (target != null && at.remaining < target.remaining);
+		boolean remaining =(at.remaining > 0);
+		
+		
+		AttackTarget at = attacks.get(i);
+		if (target  || remaining) {
+			break;
+		}
+		if (found) {
+			continue;
+		}
+		if (continents.size() > 0 && at.targetCountry.getContinent() == continents.get(0).co) {
+			bestRoute = findBestRoute(attackable, gameState, pressAttack, null, at, game.getSetupDone()?(Player) gameState.targetPlayers.get(0):null, targets);
+			target = at;
+			found = true;
+		} else {
+			target_null();
+		}
+	}
 	private String ensureRiskCard(List<Country> attackable, GameState gameState,
-			Map<Country, AttackTarget> targets, boolean pressAttack, List<EliminationTarget> continents) {
+								  Map<Country, AttackTarget> targets, boolean pressAttack, List<EliminationTarget> continents) {
 		if (this.type == AIDomination.PLAYER_AI_EASY) {
 			return null;
 		}
@@ -721,28 +810,7 @@ public class AIDomination extends AISubmissive {
 		boolean found = false;
 		int bestRoute = 0;
 		for (int i = attacks.size() - 1; i >= 0; i--) {
-			AttackTarget at = attacks.get(i);
-			if (target != null && at.remaining < target.remaining) {
-				break;
-			}
-			if (found) {
-				continue;
-			}
-			if (at.remaining > 0) {
-				target = null;
-				break;
-			}
-			if (continents.size() > 0 && at.targetCountry.getContinent() == continents.get(0).co) {
-				bestRoute = findBestRoute(attackable, gameState, pressAttack, null, at, game.getSetupDone()?(Player) gameState.targetPlayers.get(0):null, targets);
-				target = at;
-				found = true;
-			} else {
-				int route = findBestRoute(attackable, gameState, pressAttack, null, at, game.getSetupDone()?(Player) gameState.targetPlayers.get(0):null, targets);
-				if (target == null || gameState.targetPlayers.contains(at.targetCountry.getOwner()) || r.nextBoolean()) {
-					bestRoute = route;
-					target = at;
-				}
-			}
+			attack_target();
 		}
 		if (target != null) {
 			return getPlaceCommand(attackable.get(bestRoute), -target.remaining + 1);
@@ -754,7 +822,7 @@ public class AIDomination extends AISubmissive {
 	 * one last pass looking to get a risk card or reduce forces
 	 */
 	private String lastAttacks(boolean attack, List<Country> attackable,
-		GameState gameState, Map<Country, AttackTarget> targets, boolean shouldEndAttack, List<Country> border) {
+							   GameState gameState, Map<Country, AttackTarget> targets, boolean shouldEndAttack, List<Country> border) {
 		boolean isTooWeak = isTooWeak(gameState) && gameState.me.defenseValue < .5*gameState.orderedPlayers.get(0).defenseValue;
 		boolean forceReduction = game.isCapturedCountry() || game.getCards().isEmpty() || gameState.me.playerValue > 1.5*gameState.orderedPlayers.get(0).playerValue;
 		List<AttackTarget> sorted = new ArrayList<AttackTarget>(targets.values());
@@ -814,7 +882,7 @@ public class AIDomination extends AISubmissive {
 					//don't weaken the border for little gain
 					continue;
 				}
-				if (attackFrom.getArmies() < 3 || 
+				if (attackFrom.getArmies() < 3 ||
 						(game.getMaxDefendDice() > 2 && initialAttack.getArmies() > 2 && (gameState.me.playerValue < 1.5*gameState.orderedPlayers.get(0).playerValue  || game.isCapturedCountry())) ||
 						(attackFrom.getArmies() < 4 && attackFrom.getArmies() - 1 <= initialAttack.getArmies())) {
 					//don't make an attack where the odds are against us
@@ -827,36 +895,36 @@ public class AIDomination extends AISubmissive {
 				} else {
 					if (ownsNeighbours(initialAttack) && target.remaining > -(attackFrom.getArmies()/2 + attackFrom.getArmies()%2)) {
 						while((isIncreasingSet() || gameState.me.playerValue < .8*gameState.orderedPlayers.get(0).playerValue) && !isGoodIdea(gameState, targets, bestRoute, target, attackFrom, null, shouldEndAttack)) {
-				        	break;
-				        }
+							break;
+						}
 						return getAttack(targets, target, bestRoute, attackFrom);
 					}
-			        List<Country> neighbours = attackFrom.getIncomingNeighbours();
-			        int count = 0;
-			        for (int j=0; j<neighbours.size(); j++) {
-			           if ( neighbours.get(j).getOwner() != player) {
-			        	   count++;
-			           }
-			        }
-			        if (shouldEndAttack && (target.routeRemaining[bestRoute] > 0 && count > 1)) {
-			        	//this is just a regular attack, so filter it out
-			        	continue;
-			        }
-			        if (gameState.orderedPlayers.get(0).playerValue > gameState.me.playerValue) {
-			        	for (int j = 0; j < gameState.orderedPlayers.size(); j++) {
+					List<Country> neighbours = attackFrom.getIncomingNeighbours();
+					int count = 0;
+					for (int j=0; j<neighbours.size(); j++) {
+						if ( neighbours.get(j).getOwner() != player) {
+							count++;
+						}
+					}
+					if (shouldEndAttack && (target.routeRemaining[bestRoute] > 0 && count > 1)) {
+						//this is just a regular attack, so filter it out
+						continue;
+					}
+					if (gameState.orderedPlayers.get(0).playerValue > gameState.me.playerValue) {
+						for (int j = 0; j < gameState.orderedPlayers.size(); j++) {
 							PlayerState ps = gameState.orderedPlayers.get(j);
 							while (ps.p == initialAttack.getOwner() && (!gameState.breakOnlyTargets || gameState.targetPlayers.contains(ps.p)) &&
 									(ps.attackOrder == 1 || gameState.orderedPlayers.size() == 1 || ps.defenseValue > gameState.me.defenseValue*1.2 || (!shouldEndAttack&&isGoodIdea(gameState, targets, bestRoute, target, attackFrom, null, shouldEndAttack)))) {
 								return getAttack(targets, target, bestRoute, attackFrom);
 							}
 						}
-			        	continue;
-			        }
-			        if ((isIncreasingSet() || (game.getCardMode() == RiskGame.CARD_ITALIANLIKE_SET && !game.getCards().isEmpty()) || gameState.me.playerValue < .8*gameState.orderedPlayers.get(0).playerValue) && !isGoodIdea(gameState, targets, bestRoute, target, attackFrom, null, shouldEndAttack)) {
-			        	//don't push toward elimination
-			        	continue;
-			        }
-		        	return getAttack(targets, target, bestRoute, attackFrom);
+						continue;
+					}
+					if ((isIncreasingSet() || (game.getCardMode() == RiskGame.CARD_ITALIANLIKE_SET && !game.getCards().isEmpty()) || gameState.me.playerValue < .8*gameState.orderedPlayers.get(0).playerValue) && !isGoodIdea(gameState, targets, bestRoute, target, attackFrom, null, shouldEndAttack)) {
+						//don't push toward elimination
+						continue;
+					}
+					return getAttack(targets, target, bestRoute, attackFrom);
 				}
 			}
 		}
@@ -872,7 +940,7 @@ public class AIDomination extends AISubmissive {
 		if (!result && type == PLAYER_AI_HARD
 				&& gameState.orderedPlayers.size() > 2
 				&& (gameState.me.defenseValue < 1.2*gameState.orderedPlayers.get(gameState.orderedPlayers.size() - 1).defenseValue
-						|| ((gameState.commonThreat != null || player.getStatistics().size() < 4 || player.getCards().size() < 2) && gameState.me.defenseValue < (game.getMaxDefendDice()==2?1.2:1)*gameState.orderedPlayers.get(0).attackValue))
+				|| ((gameState.commonThreat != null || player.getStatistics().size() < 4 || player.getCards().size() < 2) && gameState.me.defenseValue < (game.getMaxDefendDice()==2?1.2:1)*gameState.orderedPlayers.get(0).attackValue))
 				&& shouldEndAttack(gameState)) {
 			return true;
 		}
@@ -945,9 +1013,9 @@ public class AIDomination extends AISubmissive {
 			int territories = 0;
 			int troops = 0;
 			int enemyTerritories = 0;
-		    int enemyTroops = 0;
-		    seen.clear();
-		    //look at each country to see who owns it
+			int enemyTroops = 0;
+			seen.clear();
+			//look at each country to see who owns it
 			for (int j = 0; j < ct.size(); j++) {
 				Country country = ct.get(j);
 				if (country.getOwner() == player) {
@@ -1040,7 +1108,7 @@ public class AIDomination extends AISubmissive {
 	 * Find the best route (the index in attackable) for the given target selection
 	 */
 	protected int findBestRoute(List<Country> attackable, GameState gameState,
-			boolean attack, Continent targetCo, AttackTarget selection, Player targetPlayer, Map<Country, AttackTarget> targets) {
+								boolean attack, Continent targetCo, AttackTarget selection, Player targetPlayer, Map<Country, AttackTarget> targets) {
 		int bestRoute = 0;
 		Set<Country> bestPath = null;
 		for (int i = 1; i < selection.routeRemaining.length; i++) {
@@ -1069,13 +1137,13 @@ public class AIDomination extends AISubmissive {
 					}
 				}
 				if (diff < 0 && !path1.isEmpty()) {
-			    	HashMap<Country, AttackTarget> specificTargets = new HashMap<Country, AttackTarget>();
-			    	searchTargets(specificTargets, start, start.getArmies(), 0, 1, player.getExtraArmies(), attack, Collections.EMPTY_SET, path1, gameState);
-			    	int forwardMin = getMinRemaining(specificTargets, start.getArmies(), false, gameState);
-			    	if (forwardMin > -diff) {
-			    		bestRoute = i;
+					HashMap<Country, AttackTarget> specificTargets = new HashMap<Country, AttackTarget>();
+					searchTargets(specificTargets, start, start.getArmies(), 0, 1, player.getExtraArmies(), attack, Collections.EMPTY_SET, path1, gameState);
+					int forwardMin = getMinRemaining(specificTargets, start.getArmies(), false, gameState);
+					if (forwardMin > -diff) {
+						bestRoute = i;
 						bestPath = path;
-			    	}
+					}
 				} else if (diff > 0 && path1.isEmpty() && start.getArmies() >= 3) {
 					bestRoute = i;
 					bestPath = path;
@@ -1099,8 +1167,8 @@ public class AIDomination extends AISubmissive {
 
 			if ((diff < 0 && (!attack || selection.routeRemaining[bestRoute] < 0))
 					|| (diff == 0
-							&& ((selection.attackPath[i] != null && selection.attackPath[i].getOwner() == targetPlayer)
-									|| (targetPlayer == null || selection.attackPath[bestRoute].getOwner() != targetPlayer) && start.getContinent() == targetCo))) {
+					&& ((selection.attackPath[i] != null && selection.attackPath[i].getOwner() == targetPlayer)
+					|| (targetPlayer == null || selection.attackPath[bestRoute].getOwner() != targetPlayer) && start.getContinent() == targetCo))) {
 				bestRoute = i;
 			}
 		}
@@ -1114,7 +1182,7 @@ public class AIDomination extends AISubmissive {
 	 * Get a set of the path from start (exclusive) to the given target
 	 */
 	private HashSet<Country> getPath(AttackTarget at, Map<Country, AttackTarget> targets, int i,
-			Country start) {
+									 Country start) {
 		HashSet<Country> path = new HashSet<Country>();
 		Country toAttack = at.targetCountry;
 		path.add(toAttack);
@@ -1130,7 +1198,7 @@ public class AIDomination extends AISubmissive {
 	 * Return the attack string for the given selection
 	 */
 	protected String getAttack(Map<Country, AttackTarget> targets, AttackTarget selection, int best,
-			Country start) {
+							   Country start) {
 		Country toAttack = getCountryToAttack(targets, selection, best, start);
 		return "attack " + start.getColor() + " " + toAttack.getColor();
 	}
@@ -1139,7 +1207,7 @@ public class AIDomination extends AISubmissive {
 	 * Gets the initial country to attack given the final selection
 	 */
 	private Country getCountryToAttack(Map<Country, AttackTarget> targets, AttackTarget selection,
-			int best, Country start) {
+									   int best, Country start) {
 		Country toAttack = selection.targetCountry;
 		while (!start.isNeighbours(toAttack)) {
 			selection = targets.get(selection.attackPath[best]);
@@ -1270,7 +1338,7 @@ public class AIDomination extends AISubmissive {
 	 * Search for the front of my continent
 	 */
 	private void findFront(GameState gs, Set<Country> front, Continent myCont,
-			Set<Country> visited, List<Country> n) {
+						   Set<Country> visited, List<Country> n) {
 		Stack<Country> c = new Stack<Country>();
 		c.addAll(n);
 		while (!c.isEmpty()) {
@@ -1325,7 +1393,7 @@ public class AIDomination extends AISubmissive {
 		if (!attack && type == PLAYER_AI_EASY) {
 			return null;
 		}
-	  for (int i = 0; i < toBreak.size(); i++) {
+		for (int i = 0; i < toBreak.size(); i++) {
 			Continent c = toBreak.get(i);
 			Player tp = ((Country)c.getTerritoriesContained().get(0)).getOwner();
 			PlayerState ps = null;
@@ -1355,7 +1423,7 @@ public class AIDomination extends AISubmissive {
 				if (attackTarget == null
 						|| attackTarget.remaining == Integer.MIN_VALUE
 						|| (attackTarget.remaining + player.getExtraArmies() < 1
-								&& (!game.getCards().isEmpty() || !press))) {
+						&& (!game.getCards().isEmpty() || !press))) {
 					continue;
 				}
 				int route = findBestRoute(attackable, gameState, attack, null, attackTarget, gameState.orderedPlayers.get(0).p, targets);
@@ -1473,7 +1541,7 @@ public class AIDomination extends AISubmissive {
 				toTake.add(at.targetCountry);
 			}
 		}
-			for (int i = 0; i < et.attackTargets.size() && !toTake.isEmpty(); i++) {
+		for (int i = 0; i < et.attackTargets.size() && !toTake.isEmpty(); i++) {
 			AttackTarget attackTarget = et.attackTargets.get(i);
 			if (!toTake.contains(attackTarget.targetCountry)) {
 				continue;
@@ -1569,15 +1637,15 @@ public class AIDomination extends AISubmissive {
 		return result;
 	}
 
-    /**
-     * @see Arrays#copyOf(int[], int)
-     */
-    public static int[] ArraysCopyOf(int[] original, int newLength) {
-        int[] copy = new int[newLength];
-        System.arraycopy(original, 0, copy, 0,
-                         Math.min(original.length, newLength));
-        return copy;
-    }
+	/**
+	 * @see Arrays#copyOf(int[], int)
+	 */
+	public static int[] ArraysCopyOf(int[] original, int newLength) {
+		int[] copy = new int[newLength];
+		System.arraycopy(original, 0, copy, 0,
+				Math.min(original.length, newLength));
+		return copy;
+	}
 
 	/**
 	 * ensure that we're not doing something stupid like breaking using too many troops for too little reward or pushing a player to elimination
@@ -1625,7 +1693,7 @@ public class AIDomination extends AISubmissive {
 	 * Gets the move (placement or attack) or returns null if it's not a good attack
 	 */
 	private String getMove(Map<Country, AttackTarget> targets, boolean attack, AttackTarget selection,
-			int route, Country attackFrom) {
+						   int route, Country attackFrom) {
 		if (selection == null) {
 			return null;
 		}
@@ -1649,9 +1717,9 @@ public class AIDomination extends AISubmissive {
 	 * will filter out attacks that seem too costly or if the target has no cards
 	 */
 	private List<EliminationTarget> findEliminationTargets(Map<Country, AttackTarget> targets, GameState gameState,
-			boolean attack, int remaining) {
+														   boolean attack, int remaining) {
 		List<EliminationTarget> toEliminate = new ArrayList<EliminationTarget>();
-		    for (int i = 0; i < gameState.orderedPlayers.size(); i++) {
+		for (int i = 0; i < gameState.orderedPlayers.size(); i++) {
 			PlayerState ps = gameState.orderedPlayers.get(i);
 			Player player2 = ps.p;
 
@@ -1735,16 +1803,16 @@ public class AIDomination extends AISubmissive {
 				return diff;
 			}
 
-		    public int neighboursOpen( Country c) {
-		        List<Country> neighbours = c.getNeighbours();
-		        int count = 0;
-		        for (int i=0; i<neighbours.size(); i++) {
-		           if ( neighbours.get(i).getOwner() != player && !exclusions.contains(c)) {
-		        	   count++;
-		           }
-		        }
-		        return count;
-		    }
+			public int neighboursOpen( Country c) {
+				List<Country> neighbours = c.getNeighbours();
+				int count = 0;
+				for (int i=0; i<neighbours.size(); i++) {
+					if ( neighbours.get(i).getOwner() != player && !exclusions.contains(c)) {
+						count++;
+					}
+				}
+				return count;
+			}
 		});
 		if (type == PLAYER_AI_HARD) {
 			double ratio = gameState.me.playerValue / gameState.orderedPlayers.get(0).playerValue;
@@ -1757,7 +1825,7 @@ public class AIDomination extends AISubmissive {
 		AttackTarget at = new AttackTarget(totalStartingPoints, startCountry);
 		at.routeRemaining[start] = startArmies;
 		remaining.add(at);
-		 while (!remaining.isEmpty()) {
+		while (!remaining.isEmpty()) {
 			AttackTarget current = remaining.poll();
 
 			//if this is the nearest waypoint, continue the search from this point
@@ -1814,11 +1882,11 @@ public class AIDomination extends AISubmissive {
 				} else {
 					//assume 3
 					if (attack) {
-					    int rounds = (toAttack - 3)/3;
-					    if (rounds > 0) {
-					       toAttack -= 3*rounds;
-					       available -= 3*rounds;
-					    }
+						int rounds = (toAttack - 3)/3;
+						if (rounds > 0) {
+							toAttack -= 3*rounds;
+							available -= 3*rounds;
+						}
 					}
 				}
 				if (attack && available == toAttack + 1 && toAttack <= 2) {
@@ -1842,19 +1910,19 @@ public class AIDomination extends AISubmissive {
 		}
 	}
 
-    public String getBattleWon() {
-    	GameState gameState = getGameState(player, false);
-    	return getBattleWon(gameState);
-    }
+	public String getBattleWon() {
+		GameState gameState = getGameState(player, false);
+		return getBattleWon(gameState);
+	}
 
-    /**
-     * Compute the battle won move.  We are just doing a quick reasoning here.
-     * Ideally we would consider the full state of move all vs. move min vs. some mix.
-     */
+	/**
+	 * Compute the battle won move.  We are just doing a quick reasoning here.
+	 * Ideally we would consider the full state of move all vs. move min vs. some mix.
+	 */
 	protected String getBattleWon(GameState gameState) {
 		if (ownsNeighbours(game.getDefender())) {
-    		return "move " + game.getMustMove();
-    	}
+			return "move " + game.getMustMove();
+		}
 		int needed = -game.getAttacker().getArmies();
 		List<Country> border = getBorder(gameState);
 
@@ -1863,64 +1931,64 @@ public class AIDomination extends AISubmissive {
 			/*
 			 * we're not in the middle of a planned attack, so attempt to fortify on the fly
 			 */
-    		Continent cont = null;
-    		if (!border.contains(game.getDefender()) || !gameState.me.owned.contains(game.getDefender().getContinent())) {
-    			//check if the attacker neighbours one of our continents
-	    		for (Country c : game.getAttacker().getCrossContinentNeighbours()) {
+			Continent cont = null;
+			if (!border.contains(game.getDefender()) || !gameState.me.owned.contains(game.getDefender().getContinent())) {
+				//check if the attacker neighbours one of our continents
+				for (Country c : game.getAttacker().getCrossContinentNeighbours()) {
 					if (gameState.me.owned.contains(c.getContinent())) {
 						cont = c.getContinent();
 						specialCase = true;
 						break;
 					}
 				}
-    		}
-    		if (border.contains(game.getAttacker())) {
-    			specialCase = true;
-    			if (cont != null && game.getCardMode() == RiskGame.CARD_FIXED_SET && border.contains(game.getDefender()) && game.getDefender().getContinent() == game.getAttacker().getContinent()) {
-    				cont = null;
-    				specialCase = false;
-    			} else if (gameState.me.owned.contains(game.getAttacker().getContinent())) {
-	    			cont = game.getAttacker().getContinent();
-    			}
-    		}
-    		while(specialCase && game.getCardMode() != RiskGame.CARD_FIXED_SET) {
-    			needed = additionalTroopsNeeded(game.getAttacker(), gameState);
-    			break;
-    		}
-    		if(cont != null) {
-    			if (cont.getBorderCountries().size() > 2) {
-    				needed += cont.getArmyValue();
-    			} else {
-    	    		while(specialCase && game.getCardMode() == RiskGame.CARD_FIXED_SET) {
-    	    			needed = additionalTroopsNeeded(game.getAttacker(), gameState);
-    	    			break;
-    	    		}
-    				needed += (4 * cont.getArmyValue())/Math.max(1, cont.getBorderCountries().size());
-    			}
-    		} else if (specialCase) {
-    			needed += game.getMaxDefendDice();
-    		}
-    	}
+			}
+			if (border.contains(game.getAttacker())) {
+				specialCase = true;
+				if (cont != null && game.getCardMode() == RiskGame.CARD_FIXED_SET && border.contains(game.getDefender()) && game.getDefender().getContinent() == game.getAttacker().getContinent()) {
+					cont = null;
+					specialCase = false;
+				} else if (gameState.me.owned.contains(game.getAttacker().getContinent())) {
+					cont = game.getAttacker().getContinent();
+				}
+			}
+			while(specialCase && game.getCardMode() != RiskGame.CARD_FIXED_SET) {
+				needed = additionalTroopsNeeded(game.getAttacker(), gameState);
+				break;
+			}
+			if(cont != null) {
+				if (cont.getBorderCountries().size() > 2) {
+					needed += cont.getArmyValue();
+				} else {
+					while(specialCase && game.getCardMode() == RiskGame.CARD_FIXED_SET) {
+						needed = additionalTroopsNeeded(game.getAttacker(), gameState);
+						break;
+					}
+					needed += (4 * cont.getArmyValue())/Math.max(1, cont.getBorderCountries().size());
+				}
+			} else if (specialCase) {
+				needed += game.getMaxDefendDice();
+			}
+		}
 		if (specialCase && ((breaking != null && breaking.getOwner() != null) || gameState.commonThreat != null)) {
 			needed/=2;
 		}
-    	if (!specialCase && ownsNeighbours(game.getAttacker())) {
-    		return "move " + Math.max(game.getMustMove(), game.getAttacker().getArmies() - getMinPlacement());
-    	}
-    	if (!specialCase && game.getMaxDefendDice() == 3 && !ownsNeighbours(game.getAttacker()) && gameState.me.playerValue > gameState.orderedPlayers.get(0).playerValue) {
-    		needed += game.getMaxDefendDice(); //make getting cards more difficult
-    	}
-    	int forwardMin = 0;
-    	if (game.getAttacker().getArmies() - 1 > game.getMustMove()) {
-	    	Country defender = game.getDefender();
-	    	HashMap<Country, AttackTarget> targets = new HashMap<Country, AttackTarget>();
-	    	searchTargets(targets, defender, game.getAttacker().getArmies() - 1, 0, 1, player.getExtraArmies(), true, gameState);
-	    	forwardMin = getMinRemaining(targets,  game.getAttacker().getArmies() - 1, border.contains(game.getAttacker()), gameState);
-	    	if (forwardMin == Integer.MAX_VALUE) {
-	    		return "move " + game.getMustMove();
-	    	}
-    	}
-    	return "move " + Math.max(Math.min(-needed, game.getAttacker().getArmies() - Math.max(getMinPlacement(), forwardMin)), game.getMustMove());
+		if (!specialCase && ownsNeighbours(game.getAttacker())) {
+			return "move " + Math.max(game.getMustMove(), game.getAttacker().getArmies() - getMinPlacement());
+		}
+		if (!specialCase && game.getMaxDefendDice() == 3 && !ownsNeighbours(game.getAttacker()) && gameState.me.playerValue > gameState.orderedPlayers.get(0).playerValue) {
+			needed += game.getMaxDefendDice(); //make getting cards more difficult
+		}
+		int forwardMin = 0;
+		if (game.getAttacker().getArmies() - 1 > game.getMustMove()) {
+			Country defender = game.getDefender();
+			HashMap<Country, AttackTarget> targets = new HashMap<Country, AttackTarget>();
+			searchTargets(targets, defender, game.getAttacker().getArmies() - 1, 0, 1, player.getExtraArmies(), true, gameState);
+			forwardMin = getMinRemaining(targets,  game.getAttacker().getArmies() - 1, border.contains(game.getAttacker()), gameState);
+			if (forwardMin == Integer.MAX_VALUE) {
+				return "move " + game.getMustMove();
+			}
+		}
+		return "move " + Math.max(Math.min(-needed, game.getAttacker().getArmies() - Math.max(getMinPlacement(), forwardMin)), game.getMustMove());
 	}
 
 	/**
@@ -1982,7 +2050,7 @@ public class AIDomination extends AISubmissive {
 			}
 			//cooperation check to see if we should leave this continent
 			if (c.getArmies() > 2 && gs.commonThreat != null && c.getCrossContinentNeighbours().size() > 0 && !ownsNeighbours(c)) {
-			  for (int j = 0; j < c.getNeighbours().size(); j++) {
+				for (int j = 0; j < c.getNeighbours().size(); j++) {
 					Country n = (Country)c.getNeighbours().get(j);
 					if (n.getOwner() == player && n.getContinent() != c.getContinent()) {
 						//we have another continent to go to, ensure that the original continent is not desirable
@@ -2098,7 +2166,7 @@ public class AIDomination extends AISubmissive {
 	 * Will roll the maximum, but checks to see if the attack is still the
 	 * best plan every 3rd roll
 	 */
-    public String getRoll() {
+	public String getRoll() {
 		int n=game.getAttacker().getArmies() - 1;
 		int m=game.getDefender().getArmies();
 
@@ -2107,69 +2175,69 @@ public class AIDomination extends AISubmissive {
 		}
 
 		//spot check the plan
-    	if (type != AIDomination.PLAYER_AI_EASY && (game.getBattleRounds()%3 == 2 || (game.getBattleRounds() > 0 && (n - Math.min(m, game.getMaxDefendDice()) <= 0)))) {
-    		String result = plan(true);
-    		//TODO: rewrite to not use string parsing
-    		if (result.equals("endattack")) {
-    			return "retreat";
-    		}
-    		StringTokenizer st = new StringTokenizer(result);
-    		st.nextToken();
-    		if (game.getAttacker().getColor() != Integer.parseInt(st.nextToken())
-    				|| game.getDefender().getColor() != Integer.parseInt(st.nextToken())) {
-    			return "retreat";
-    		}
-    	}
+		if (type != AIDomination.PLAYER_AI_EASY && (game.getBattleRounds()%3 == 2 || (game.getBattleRounds() > 0 && (n - Math.min(m, game.getMaxDefendDice()) <= 0)))) {
+			String result = plan(true);
+			//TODO: rewrite to not use string parsing
+			if (result.equals("endattack")) {
+				return "retreat";
+			}
+			StringTokenizer st = new StringTokenizer(result);
+			st.nextToken();
+			if (game.getAttacker().getColor() != Integer.parseInt(st.nextToken())
+					|| game.getDefender().getColor() != Integer.parseInt(st.nextToken())) {
+				return "retreat";
+			}
+		}
 		return "roll " + Math.min(3, n);
-    }
+	}
 
-    /**
-     * Get a quick overview of the game state - capitals, player ordering, if there is a common threat, etc.
-     * @param p
-     * @param excludeCards
-     * @return
-     */
-    public GameState getGameState(Player p, boolean excludeCards) {
-    	List<Player> players = game.getPlayers();
-    	GameState g = new GameState();
-    	Continent[] c = game.getContinents();
-    	if (player.getCapital() == null) {
-    		g.capitals = Collections.EMPTY_SET;
-    	} else {
-    		g.capitals = new HashSet<Country>();
-    	}
-    	g.owned = new Player[c.length];
-    	for (int i = 0; i < c.length; i++) {
+	/**
+	 * Get a quick overview of the game state - capitals, player ordering, if there is a common threat, etc.
+	 * @param p
+	 * @param excludeCards
+	 * @return
+	 */
+	public GameState getGameState(Player p, boolean excludeCards) {
+		List<Player> players = game.getPlayers();
+		GameState g = new GameState();
+		Continent[] c = game.getContinents();
+		if (player.getCapital() == null) {
+			g.capitals = Collections.EMPTY_SET;
+		} else {
+			g.capitals = new HashSet<Country>();
+		}
+		g.owned = new Player[c.length];
+		for (int i = 0; i < c.length; i++) {
 			g.owned[i] = c[i].getOwner();
 		}
-    	int index = -1;
-    	int playerCount = 1;
-    	//find the set of capitals
-    	for (int i = 0; i < players.size(); i++) {
-    		Player player2 = players.get(i);
-    		if (player2.getCapital() != null) {
-    			g.capitals.add(player2.getCapital());
-    		}
-    		if (player2.getTerritoriesOwned().isEmpty()) {
-    			continue;
-    		}
-    		if (player2 == p) {
-    			index = i;
-    		} else {
-    			playerCount++;
-    		}
-    	}
-    	g.orderedPlayers = new ArrayList<PlayerState>(playerCount);
-    	int attackOrder = 0;
-    	int strategicCount = 0;
-    	for (int i = 0; i < players.size(); i++) {
-    		Player player2 = players.get((index + i)%players.size());
-    		if (player2.getTerritoriesOwned().isEmpty()) {
-    			continue;
-    		}
-    		//estimate the trade-in
-    		int cards = player2.getCards().size() + 1;
-    		int cardEstimate = (i==0&&excludeCards)?0:getCardEstimate(cards);
+		int index = -1;
+		int playerCount = 1;
+		//find the set of capitals
+		for (int i = 0; i < players.size(); i++) {
+			Player player2 = players.get(i);
+			if (player2.getCapital() != null) {
+				g.capitals.add(player2.getCapital());
+			}
+			if (player2.getTerritoriesOwned().isEmpty()) {
+				continue;
+			}
+			if (player2 == p) {
+				index = i;
+			} else {
+				playerCount++;
+			}
+		}
+		g.orderedPlayers = new ArrayList<PlayerState>(playerCount);
+		int attackOrder = 0;
+		int strategicCount = 0;
+		for (int i = 0; i < players.size(); i++) {
+			Player player2 = players.get((index + i)%players.size());
+			if (player2.getTerritoriesOwned().isEmpty()) {
+				continue;
+			}
+			//estimate the trade-in
+			int cards = player2.getCards().size() + 1;
+			int cardEstimate = (i==0&&excludeCards)?0:getCardEstimate(cards);
 			PlayerState ps = new PlayerState();
 			List<Country> t = player2.getTerritoriesOwned();
 			int noArmies = 0;
@@ -2231,50 +2299,50 @@ public class AIDomination extends AISubmissive {
 			}
 			ps.playerValue += ps.attackValue + ((game.getMaxDefendDice() == 2 && !isIncreasingSet())?1:game.getMaxDefendDice()>2?3:2)*ps.defenseValue;
 			attackOrder++;
-    	}
-    	//put the players in order of strongest to weakest
-    	Collections.sort(g.orderedPlayers, Collections.reverseOrder());
-    	//check to see if there is a common threat
-    	//the logic will allow the ai to team up against the strongest player
-    	//TODO: similar logic could be expanded to understand alliances/treaties
-    	if (game.getSetupDone() && !g.orderedPlayers.isEmpty()) {
-    		//base top player multiplier
-    		double multiplier = game.getCards().isEmpty()?(game.isRecycleCards()?1.2:1.1):(player.getMission()!=null||player.getCapital()!=null)?1.1:1.3;
-    		PlayerState topPlayer = g.orderedPlayers.get(0);
-    		if (type == AIDomination.PLAYER_AI_EASY) {
+		}
+		//put the players in order of strongest to weakest
+		Collections.sort(g.orderedPlayers, Collections.reverseOrder());
+		//check to see if there is a common threat
+		//the logic will allow the ai to team up against the strongest player
+		//TODO: similar logic could be expanded to understand alliances/treaties
+		if (game.getSetupDone() && !g.orderedPlayers.isEmpty()) {
+			//base top player multiplier
+			double multiplier = game.getCards().isEmpty()?(game.isRecycleCards()?1.2:1.1):(player.getMission()!=null||player.getCapital()!=null)?1.1:1.3;
+			PlayerState topPlayer = g.orderedPlayers.get(0);
+			if (type == AIDomination.PLAYER_AI_EASY) {
 				multiplier *= 1.6; //typically this waits too long in the end game
-    		} else if (type == AIDomination.PLAYER_AI_HARD && player.getStatistics().size() > 3) {
-    			while (!isIncreasingSet()) {
-    				//we can be more lenient with more players
-    				multiplier = Math.max(1, multiplier - .4 + g.orderedPlayers.size()*.1);
-    				break;
-    			}while (game.getCardMode() != RiskGame.CARD_ITALIANLIKE_SET) {
-    				//don't want to pursue the lowest player if there's a good chance someone else will eliminate
-    				multiplier *= 1.5;
-    				break;
-    			}
-    		} else if (type == AIDomination.PLAYER_AI_AVERAGE) {
-    			multiplier *= 1.2;
-    		}
+			} else if (type == AIDomination.PLAYER_AI_HARD && player.getStatistics().size() > 3) {
+				while (!isIncreasingSet()) {
+					//we can be more lenient with more players
+					multiplier = Math.max(1, multiplier - .4 + g.orderedPlayers.size()*.1);
+					break;
+				}while (game.getCardMode() != RiskGame.CARD_ITALIANLIKE_SET) {
+					//don't want to pursue the lowest player if there's a good chance someone else will eliminate
+					multiplier *= 1.5;
+					break;
+				}
+			} else if (type == AIDomination.PLAYER_AI_AVERAGE) {
+				multiplier *= 1.2;
+			}
 			g.targetPlayers.add(topPlayer.p);
 			//look to see if you and the next highest player are at the multiplier below the highest
-    		if (g.orderedPlayers.size() > 1 && topPlayer.playerValue > multiplier * g.me.playerValue) {
-    			g.breakOnlyTargets = game.getMaxDefendDice() == 2;
-    			PlayerState ps = g.orderedPlayers.get(1);
-    			if (topPlayer.playerValue > multiplier * ps.playerValue) {
-        			g.commonThreat = topPlayer;
-    			} else {
-    				//each of the top players is a target
-    				g.targetPlayers.add(ps.p);
-    			}
-    		} else if (type == AIDomination.PLAYER_AI_HARD && isIncreasingSet() && g.orderedPlayers.get(g.orderedPlayers.size()-1).defenseValue/topPlayer.attackValue > .3) {
-    			//play for the elimination
-    			g.targetPlayers.clear();
-    			g.targetPlayers.add(g.orderedPlayers.get(g.orderedPlayers.size()-1).p);
-    		}
-    	}
-    	return g;
-    }
+			if (g.orderedPlayers.size() > 1 && topPlayer.playerValue > multiplier * g.me.playerValue) {
+				g.breakOnlyTargets = game.getMaxDefendDice() == 2;
+				PlayerState ps = g.orderedPlayers.get(1);
+				if (topPlayer.playerValue > multiplier * ps.playerValue) {
+					g.commonThreat = topPlayer;
+				} else {
+					//each of the top players is a target
+					g.targetPlayers.add(ps.p);
+				}
+			} else if (type == AIDomination.PLAYER_AI_HARD && isIncreasingSet() && g.orderedPlayers.get(g.orderedPlayers.size()-1).defenseValue/topPlayer.attackValue > .3) {
+				//play for the elimination
+				g.targetPlayers.clear();
+				g.targetPlayers.add(g.orderedPlayers.get(g.orderedPlayers.size()-1).p);
+			}
+		}
+		return g;
+	}
 
 	private int getCardEstimate(int cards) {
 		int tradeIn = game.getCardMode() != RiskGame.CARD_INCREASING_SET?8:game.getNewCardState();
@@ -2282,10 +2350,10 @@ public class AIDomination extends AISubmissive {
 		return cardEstimate;
 	}
 
-    /**
-     * Provides a quick measure of how the player has performed
-     * over the last several turns
-     */
+	/**
+	 * Provides a quick measure of how the player has performed
+	 * over the last several turns
+	 */
 	private boolean isStrategic(Player player2) {
 		if (player2 == this.player) {
 			return false;
@@ -2312,101 +2380,101 @@ public class AIDomination extends AISubmissive {
 	}
 
 	/**
-     * Delay trading in cards when sensible
-     * TODO: this should be more strategic, such as looking ahead for elimination
-     */
-    public String getTrade() {
-    	if (!game.getTradeCap() && type != AIDomination.PLAYER_AI_EASY) {
-    		if (game.getCardMode() != RiskGame.CARD_ITALIANLIKE_SET && player.getCards().size() >= RiskGame.MAX_CARDS) {
-    			return super.getTrade();
-    		}
-    		GameState gs = getGameState(player, true);
-    		if (gs.commonThreat == null && gs.orderedPlayers.size() > 1 && !pressAttack(gs) && !isTooWeak(gs)) {
-    			return "endtrade";
-    		}
-    	}
-    	return super.getTrade();
-    }
+	 * Delay trading in cards when sensible
+	 * TODO: this should be more strategic, such as looking ahead for elimination
+	 */
+	public String getTrade() {
+		if (!game.getTradeCap() && type != AIDomination.PLAYER_AI_EASY) {
+			if (game.getCardMode() != RiskGame.CARD_ITALIANLIKE_SET && player.getCards().size() >= RiskGame.MAX_CARDS) {
+				return super.getTrade();
+			}
+			GameState gs = getGameState(player, true);
+			if (gs.commonThreat == null && gs.orderedPlayers.size() > 1 && !pressAttack(gs) && !isTooWeak(gs)) {
+				return "endtrade";
+			}
+		}
+		return super.getTrade();
+	}
 
-    /**
-     * Finds all countries that can be attacked from.
-     * @param p player object
-     * @param attack true if this is durning attack, which requires the territority to have 2 or more armies
-     * @return a Vector of countries, never null
-     */
-    public List<Country> findAttackableTerritories(Player p, boolean attack) {
-    	List<Country> countries = p.getTerritoriesOwned();
-    	List<Country> result = new ArrayList<Country>();
-    	for (int i=0; i<countries.size(); i++) {
-    		Country country = countries.get(i);
-    		if ((!attack || country.getArmies() > 1) && !ownsNeighbours(p, country)) {
+	/**
+	 * Finds all countries that can be attacked from.
+	 * @param p player object
+	 * @param attack true if this is durning attack, which requires the territority to have 2 or more armies
+	 * @return a Vector of countries, never null
+	 */
+	public List<Country> findAttackableTerritories(Player p, boolean attack) {
+		List<Country> countries = p.getTerritoriesOwned();
+		List<Country> result = new ArrayList<Country>();
+		for (int i=0; i<countries.size(); i++) {
+			Country country = countries.get(i);
+			if ((!attack || country.getArmies() > 1) && !ownsNeighbours(p, country)) {
 				result.add(country);
-    		}
-    	}
-    	return result;
-    }
+			}
+		}
+		return result;
+	}
 
-    /**
-     * Checks whether a country owns its neighbours
-     * @param p player object, c Country object
-     * @return boolean True if the country owns its neighbours, else returns false
-     */
-    public boolean ownsNeighbours(Player p, Country c) {
-        List<Country> neighbours = c.getNeighbours();
+	/**
+	 * Checks whether a country owns its neighbours
+	 * @param p player object, c Country object
+	 * @return boolean True if the country owns its neighbours, else returns false
+	 */
+	public boolean ownsNeighbours(Player p, Country c) {
+		List<Country> neighbours = c.getNeighbours();
 
-        for (int i=0; i<neighbours.size(); i++) {
-           if ( neighbours.get(i).getOwner() != p) {
-        	   return false;
-           }
-        }
+		for (int i=0; i<neighbours.size(); i++) {
+			if ( neighbours.get(i).getOwner() != p) {
+				return false;
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    protected String getTrade(Card[] result) {
-    	if (type != PLAYER_AI_EASY) {
-    		boolean[] owns = new boolean[result.length];
-    		int ownsCount = 0;
-    		for (int i = 0; i < result.length; i++) {
-    			if (result[i].getCountry() != null && player.getTerritoriesOwned().contains(result[i].getCountry())) {
-    				owns[i] = true;
-    				ownsCount++;
-    			}
-    		}
+	@Override
+	protected String getTrade(Card[] result) {
+		if (type != PLAYER_AI_EASY) {
+			boolean[] owns = new boolean[result.length];
+			int ownsCount = 0;
+			for (int i = 0; i < result.length; i++) {
+				if (result[i].getCountry() != null && player.getTerritoriesOwned().contains(result[i].getCountry())) {
+					owns[i] = true;
+					ownsCount++;
+				}
+			}
 			//swap for a single owned country - TODO: be smarter about which territory to retain
-    		if (ownsCount != 1 && player.getCards().size() > 3) {
-    			List<Card> toTrade = Arrays.asList(result);
-        		for (Card card : (List<Card>)player.getCards()) {
-        			if (toTrade.contains(card)) {
-        				continue;
-        			}
-        			if (ownsCount > 1) {
-	        			while(card.getCountry() == null || !player.getTerritoriesOwned().contains(card.getCountry())) break;{
-	        				for (int i = 0; i < result.length; i++) {
-	        					while(result[i].getName().equals(card.getName())) {
-	        						result[i] = card;
-	        						while(--ownsCount == 1) {
-	        							return super.getTrade(result);
-	        						}
-	        						break;
-	        					}
-	        				}
-	        			}
-        			} else {
-        				while(card.getCountry() != null && player.getTerritoriesOwned().contains(card.getCountry())) {
-        					for (int i = 0; i < result.length; i++) {
-	        					while (result[i].getName().equals(card.getName())) {
-	        						result[i] = card;
-	        						return super.getTrade(result);
-	        					}
-	        				}
-	        			}
-        			}
-        		}
-    		}
-    	}
-    	return super.getTrade(result);
-    }
+			if (ownsCount != 1 && player.getCards().size() > 3) {
+				List<Card> toTrade = Arrays.asList(result);
+				for (Card card : (List<Card>)player.getCards()) {
+					if (toTrade.contains(card)) {
+						continue;
+					}
+					if (ownsCount > 1) {
+						while(card.getCountry() == null || !player.getTerritoriesOwned().contains(card.getCountry())) break;{
+							for (int i = 0; i < result.length; i++) {
+								while(result[i].getName().equals(card.getName())) {
+									result[i] = card;
+									while(--ownsCount == 1) {
+										return super.getTrade(result);
+									}
+									break;
+								}
+							}
+						}
+					} else {
+						while(card.getCountry() != null && player.getTerritoriesOwned().contains(card.getCountry())) {
+							for (int i = 0; i < result.length; i++) {
+								while (result[i].getName().equals(card.getName())) {
+									result[i] = card;
+									return super.getTrade(result);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return super.getTrade(result);
+	}
 
 }

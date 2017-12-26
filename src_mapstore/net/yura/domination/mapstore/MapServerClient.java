@@ -34,12 +34,25 @@ import net.yura.social.GooglePlusOne;
  * @author Yura Mamyrin
  */
 public class MapServerClient extends HTTPClient {
-
+    /**
+     * Costant about Logger applied
+     */
     public static final Logger logger = Logger.getLogger(MapServerClient.class.getName());
-
+    /**
+     * XML REQUEST Costant
+     */
     public static final int XML_REQUEST_ID = 1;
+    /**
+     * MAP REQUEST Costant
+     */
     public static final int MAP_REQUEST_ID = 2;
+    /**
+     * Img request costant
+     */
     public static final int IMG_REQUEST_ID = 3;
+    /**
+     * Puls request ID Costant
+     */
     public static final int PULS_REQUEST_ID = 4;
 
     private static final String RATE_URL = "http://maps.yura.net/maps?mapfile=";
@@ -56,9 +69,12 @@ public class MapServerClient extends HTTPClient {
     List downloads = new Vector();
 
     class ServerRequest extends Request {
-	public int type;
+        /**
+         * Integer Variable
+         */
+        public int type;
     }
-    
+
     public MapServerClient(MapServerListener aThis) {
         super(4);
         chooser = aThis;
@@ -70,162 +86,189 @@ public class MapServerClient extends HTTPClient {
             super.kill();
         }
     }
-
     protected void onError(Request r, int responseCode, Hashtable headers, Exception ex) {
-	ServerRequest request = (ServerRequest)r;
+        ServerRequest request = (ServerRequest)r;
         MapServerListener ch = this.chooser;
 
         if (request.type == MAP_REQUEST_ID && ((MapDownload) request.id).ignoreErrorInDownload(request.url, responseCode)) {
             logger.info("skipped "+request);
             return;
         }
-
+        String connTimeOut = "Connection timed out";
+        String connReset = "Connection reset by peer";
+        String failedEtimeOut = "recvfrom failed: ETIMEDOUT (Connection timed out)";
+        String failedEConnReset = "recvfrom failed: ECONNRESET (Connection reset by peer)";
         Level level  = Level.WARNING;
-        if (    ex instanceof UnknownHostException ||
-                ex instanceof SocketTimeoutException ||
-                ex instanceof ConnectException ||
-               (ex instanceof EOFException && responseCode==0) || // end of stream during getResponseCode
-               (ex instanceof SocketException &&
-                   ("Connection timed out".equals(ex.getMessage()) ||
-                    "Connection reset by peer".equals(ex.getMessage()) ||
-                    "recvfrom failed: ETIMEDOUT (Connection timed out)".equals(ex.getMessage()) ||
-                    "recvfrom failed: ECONNRESET (Connection reset by peer)".equals(ex.getMessage())) ) ) {
+        if (checkExceptionError(ex) && checkStringError(ex)) {
             level = Level.INFO;
         }
         // print error to console
         logger.log(level, "error: "+responseCode+" "+ex+" "+request+"\n"+headers, ex!=null?ex:new Exception());
-
         // show error dialog to the user
-        if (ch!=null) {
+        if (ch != null) {
             String error = "error:"+(responseCode!=0?" "+responseCode:"")+(ex!=null?" "+ex:"");
-            if (request.type == XML_REQUEST_ID || request.type == PULS_REQUEST_ID) {
-                ch.onXMLError(error);
-            }
-            else if (request.type == MAP_REQUEST_ID) {
-                ch.onDownloadError(error);
-            }
-            // for images do not pop-up error
+            checkReqType(request,ch);
         }
     }
-
-    protected void onResult(Request r, int responseCode, Hashtable headers, InputStream is, long length) throws Exception {
-	ServerRequest request = (ServerRequest)r;
-        MapServerListener ch = this.chooser;
-
-        if (request.type == XML_REQUEST_ID) {
-            XMLMapAccess access = new XMLMapAccess();
-
-            // on android BufferedInputStream makes it much fast, on desktop java does not really make a difference
-            Task task = (Task)access.load( new UTF8InputStreamReader(new BufferedInputStream(is)) );
-
-            // HACK!!! there is a massive bug in Android where if you dont do a extra read after reading all the data
-            // HACK!!! your next http request will fail! http://code.google.com/p/android/issues/detail?id=7786
-            // HACK!!! this bug is found on Android 1.6, it seems to be fixed on Android 2.3.3
-            if (Midlet.getPlatform()==Midlet.PLATFORM_ANDROID) {
-                is.read();
-            }
-
-//System.out.println("Got XML "+task);
-
-            if (ch!=null) {
-        	String method = task.getMethod();
-        	Object param = task.getObject();
-        	if ("categories".equals(method)) {
-                    while (param instanceof java.util.List) {
-                	ch.gotResultCategories( request.url, (java.util.List)param );
-                    break;
-                    }
-                }
-                else if ("maps".equals(method)) {
-                    while(param instanceof java.util.Map) {
-                        java.util.Map info = (java.util.Map)param;
-                        List<Map> list = (List)info.get("maps");
-                        // check if needs to be sorted by rating.
-                        while (request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) {
-                            List<String> urls = new ArrayList(list.size());
-                            for (Map map : list) {
-                                String fileUID = MapChooser.getFileUID( map.getMapUrl() );
-                                urls.add(RATE_URL+Url.encode(fileUID));
-                            }
-                            ServerRequest request1 = new ServerRequest();
-                            request1.id = new Object[] {request.url, list};
-                            request1.url = GooglePlusOne.URL;
-                            request1.type = PULS_REQUEST_ID;
-                            request1.post = true;
-                            request1.postData = GooglePlusOne.getRequest(urls);
-                            request1.headers = new Hashtable();
-                            request1.headers.put("Content-Type", "application/json");
-                            makeRequest(request1);
-                            break;
-                        }
-                        while (!(request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) ){
-                   
-                            //info.get("search");
-                            //info.get("author");
-                            //info.get("category");
-                            //info.get("offset");
-                            //info.get("total");
-                            ch.gotResultMaps(request.url, list);
-                            break;
-                        }
-                    break;
-                    }
-                }
-            }
+    private void checkReqType(ServerRequest request, MapServerListener ch) {
+        MapServerListener chS = ch;
+        if (request.type == XML_REQUEST_ID || request.type == PULS_REQUEST_ID) {
+            chS.onXMLError(error);
         }
         else if (request.type == MAP_REQUEST_ID) {
-            ((MapDownload)request.id).gotRes(request.url, is );
+            chS.onDownloadError(error);
         }
-        else if (request.type == IMG_REQUEST_ID) {
-            MapChooser.gotImgFromServer(request.id, request.url, SystemUtil.getData(is, (int)length), ch );
+    }
+    private boolean checkExceptionError(Exception ex) {
+        boolean isError = false;
+        if(ex instanceof UnknownHostException || ex instanceof ConnectException
+                || (ex instanceof EOFException && responseCode==0) || ex instanceof SocketException) {
+            isError = true;
         }
-        else if (request.type == PULS_REQUEST_ID) {
-            Object[] tmp = (Object[])request.id;
-            String ratedlistUrl = (String)tmp[0];
-            List<Map> ratedList = (List<Map>)tmp[1];
-            java.util.Map<String,Integer> urlRatings = GooglePlusOne.getCount(is);
-            final java.util.Map<String,Integer> ratings = new HashMap();
-            for (java.util.Map.Entry<String,Integer> entry: urlRatings.entrySet()) {
-                String fileUID = Url.decode(entry.getKey().substring(RATE_URL.length()));
-                ratings.put(fileUID, entry.getValue());
-            }
-            Collections.sort(ratedList, new Comparator<Map>() {
-                @Override
-                public int compare(Map map0, Map map1) {
-                    int rating0 = getRating(map0, ratings);
-                    int rating1 = getRating(map1, ratings);
-                    while(rating0 != rating1) {
-                        return rating1 - rating0;
-                    }
-                    return Integer.parseInt(map0.getId()) - Integer.parseInt(map1.getId());
-                }
-            });
-            while(ch!=null) {
-                ch.gotResultMaps(ratedlistUrl, ratedList);
-                break;
-            }
+        return isError;
+    }
+    private boolean checkStringError(Exception ex) {
+        String connTimeOut = "Connection timed out";
+        String connReset = "Connection reset by peer";
+        String failedEtimeOut = "recvfrom failed: ETIMEDOUT (Connection timed out)";
+        String failedEConnReset = "recvfrom failed: ECONNRESET (Connection reset by peer)";
+        boolean isError = false;
+        if(connReset.equals(ex.getMessage()) || connTimeOut.equals(ex.getMessage()) ||
+                failedEConnReset.equals(ex.getMessage()) || failedEConnReset.equals(ex.getMessage())) {
+            isError = true;
         }
+        return isError;
+    }
+    protected void onResult(Request r, int responseCode, Hashtable headers, InputStream is, long length) throws Exception {
+        ServerRequest request = (ServerRequest)r;
+        MapServerListener ch = this.chooser;
+        if (request.type == XML_REQUEST_ID) {
+            XMLMapAccess access = new XMLMapAccess();
+            // on android BufferedInputStream makes it much fast, on desktop java does not really make a difference
+            Task task = (Task)access.load( new UTF8InputStreamReader(new BufferedInputStream(is)) );
+            plat();
+            ch = checkCh(ch)
+        }
+        checkRequestType(request);
         else {
             logger.warning("[MapServerClient] unknown type "+request.type);
         }
     }
-
+    private void plat() {
+        // HACK!!! there is a massive bug in Android where if you dont do a extra read after reading all the data
+        // HACK!!! your next http request will fail! http://code.google.com/p/android/issues/detail?id=7786
+        // HACK!!! this bug is found on Android 1.6, it seems to be fixed on Android 2.3.3
+        if (Midlet.getPlatform()==Midlet.PLATFORM_ANDROID) {
+            is.read();
+        }
+    }
+    private void checkRequestType(ServerRequest request) {
+        switch(request) {
+            case request.type == MAP_REQUEST_ID:
+                ((MapDownload)request.id).gotRes(request.url, is );
+                break;
+            case request.type == IMG_REQUEST_ID:
+                MapChooser.gotImgFromServer(request.id, request.url, SystemUtil.getData(is, (int)length), ch );
+                break;
+            case  request.type == PULS_REQUEST_ID:
+                Object[] tmp = (Object[])request.id;
+                String ratedlistUrl = (String)tmp[0];
+                List<Map> ratedList = (List<Map>)tmp[1];
+                java.util.Map<String,Integer> urlRatings = GooglePlusOne.getCount(is);
+                final java.util.Map<String,Integer> ratings = new HashMap();
+                ratings = createRatings(ratings);
+                sortList(ratedList);
+                if(ch!=null) {
+                    ch.gotResultMaps(ratedlistUrl, ratedList);
+                }
+                break;
+        }
+    }
+    private java.util.Map<String,Integer> createRatings(java.util.Map<String,Integer> ratings) {
+        java.util.Map<String,Integer> maps = new HashMap<>(ratings);
+        for (java.util.Map.Entry<String,Integer> entry: urlRatings.entrySet()) {
+            String fileUID = Url.decode(entry.getKey().substring(RATE_URL.length()));
+            maps.put(fileUID, entry.getValue());
+        }
+        return maps;
+    }
+    private int sortedList(List<Map> ratedList) {
+        Collections.sort(ratedList, new Comparator<Map>() {
+            @Override
+            public int compare(Map map0, Map map1) {
+                int rating0 = getRating(map0, ratings);
+                int rating1 = getRating(map1, ratings);
+                while(rating0 != rating1) {
+                    return rating1 - rating0;
+                }
+                return Integer.parseInt(map0.getId()) - Integer.parseInt(map1.getId());
+            }
+        });
+    }
+    private void checkRequest(List<Map> list,ServerRequest request) {
+        if(request.params != null && "TOP_RATINGS".equals(request.params.get("sort")) && list.size() > 0) {
+            List<String> urls = new ArrayList(list.size());
+            for (Map map : list) {
+                String fileUID = MapChooser.getFileUID( map.getMapUrl() );
+                urls.add(RATE_URL+Url.encode(fileUID));
+            }
+            ServerRequest request1 = new ServerRequest();
+            request1.id = new Object[] {request.url, list};
+            request1.url = GooglePlusOne.URL;
+            request1.type = PULS_REQUEST_ID;
+            request1.post = true;
+            request1.postData = GooglePlusOne.getRequest(urls);
+            request1.headers = new Hashtable();
+            request1.headers.put("Content-Type", "application/json");
+            makeRequest(request1);
+            break;
+        }
+    }
+    private MapServerlistener checkCh(MapServerListener ch,ServerRequest request) {
+        final String CATEGORIES = "categories";
+        final String MAPS = "maps";
+        MapServerClient chParam = ch;
+        if (ch!=null) {
+            String method = task.getMethod();
+            Object param = task.getObject();
+            chekCategories = checkCategories(ch,request,param);
+        }
+        else if (MAPS.equals(method) && param instanceof java.util.Map) {
+            java.util.Map info = (java.util.Map)param;
+            List<Map> list = (List)info.get(MAPS);
+            chParam = checkRequest(list,request);
+            checkRequestParams(list, request);
+        }
+        return chParam;
+    }
+    private void checkRequestParams(List<Map> list, ServerRequest request) {
+        final String TOP_RATINGS = "TOP_RATINGS";
+        final String SORT = "sort";
+        if(!(request.params != null && TOP_RATINGS.equals(request.params.get(SORT)) && list.size() > 0) ){
+            ch.gotResultMaps(request.url, list);
+        }
+    }
+    private void checkCategories(MapServerlistener ch,ServerRequest request,Object param) {
+        if (CATEGORIES.equals(method) && param instanceof java.util.List) {
+            ch.gotResultCategories( request.url, (java.util.List)param );
+        }
+    }
     private static int getRating(Map map, java.util.Map<String,Integer> ratings) {
         Integer rating = ratings.get(MapChooser.getFileUID(map.getMapUrl()));
         return rating == null ? 0 : rating;
     }
 
     private void makeRequest(String url,Hashtable params,int type, Object key) {
-	    ServerRequest request = new ServerRequest();
-	    request.type = type;
-            request.url = url;
-            request.params = params;
-            request.id = key;
-            request.headers = headers;
-            logger.info("Make Request: "+request);
-            // TODO, should be using RiskIO to do this get
-            // as otherwise it will not work with lobby
-            makeRequest(request);
+        ServerRequest request = new ServerRequest();
+        request.type = type;
+        request.url = url;
+        request.params = params;
+        request.id = key;
+        request.headers = headers;
+        logger.info("Make Request: "+request);
+        // TODO, should be using RiskIO to do this get
+        // as otherwise it will not work with lobby
+        makeRequest(request);
     }
 
     public void makeRequestXML(String string, String key, String value) {
@@ -243,7 +286,7 @@ public class MapServerClient extends HTTPClient {
      * to make sure we check the disk cache, as the image may have already been downloaded.
      */
     void getImage(String url, Object key) {
-	makeRequest(url, null, IMG_REQUEST_ID, key);
+        makeRequest(url, null, IMG_REQUEST_ID, key);
     }
 
     public void downloadMap(String fullMapUrl) {
