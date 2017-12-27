@@ -121,24 +121,29 @@ public class RiskUtil {
          *   choosemap luca.map
          *   startgame domination increasing
          */
-        public static String createGameString(int easyAI, int averageAI, int hardAI, int gameMode, int cardsMode, boolean AutoPlaceAll, boolean recycle, String mapFile) {
-
-            String players = averageAI + "\n" + easyAI + "\n" + hardAI + "\n";
-
-            String type="";
-
-            switch(gameMode) {
+         public static String GameString(){
+            int gameMode = 0;
+              switch(gameMode) {
                 case RiskGame.MODE_DOMINATION: type = "domination"; break;
                 case RiskGame.MODE_CAPITAL: type = "capital"; break;
                 case RiskGame.MODE_SECRET_MISSION: type = "mission"; break;
             }
+            int cardsMode = 0;
             
             switch(cardsMode) {
                 case RiskGame.CARD_INCREASING_SET: type += " increasing"; break;
                 case RiskGame.CARD_FIXED_SET: type += " fixed"; break;
                 case RiskGame.CARD_ITALIANLIKE_SET: type += " italianlike"; break;
             }
+            return null;
+            
+        }
+        public static String createGameString(int easyAI, int averageAI, int hardAI, int gameMode, int cardsMode, boolean AutoPlaceAll, boolean recycle, String mapFile) {
 
+            String players = averageAI + "\n" + easyAI + "\n" + hardAI + "\n";
+
+            String type="";
+            
             if ( AutoPlaceAll ) type += " autoplaceall";
             if ( recycle ) type += " recycle";
             
@@ -331,49 +336,62 @@ public class RiskUtil {
          * in the case of map files it will get the "name" "crd" "prv" "pic" "map" and any "comment" and number of "countries"
          * and for cards it will have a "missions" that will contain the String[] of all the missions
          */
-	public static java.util.Map loadInfo(String fileName,boolean cards) {
-
-            Hashtable info = new Hashtable();
-
-            for (int c=0;true;c++) {
-
-                BufferedReader bufferin=null;
-
-                try {
-
-                        bufferin= RiskUtil.readMap(RiskUtil.openMapStream(fileName));
+        public static java.util.Map RiskUtil1(){
+            BufferedReader bufferin=null;
+            String fileName = null;
+            try {
+                bufferin= RiskUtil.readMap(RiskUtil.openMapStream(fileName));
+            } catch (IOException ex) {
+                Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
                         Vector misss=null;
-
-                        if (cards) {
+                        boolean cards = false;
+             if (cards) {
                             MapTranslator.setCards( fileName );
                             misss = new Vector();
                         }
-
-                        String input = bufferin.readLine();
-                        String mode = null;
-
-                        while(input != null) {
-
-                                if (input.equals("")) {
-                                        // do nothing
-                                        //System.out.print("Nothing\n"); // testing
-                                }
-                                else if (input.charAt(0)==';') {
-                                    String comment = (String)info.get("comment");
-                                    String com = input.substring(1).trim();
-                                    if (comment==null) {
-                                        comment = com;
+            return null;
+        }
+        public static java.util.Map RiskUtil2(){
+            try {
+                BufferedReader bufferin=null;
+                String input = bufferin.readLine();
+                if (input.equals("")) {
+                    // do nothing
+                    //System.out.print("Nothing\n"); // testing
+                }
+                else if (input.charAt(0)==';') {
+                     Hashtable info = new Hashtable();
+                    String comment = (String)info.get("comment");
+                    String com = input.substring(1).trim();
+                    if (comment==null) {
+                        comment = com;
+                    }
+                    else {
+                        comment = comment +"\n"+com;
+                    }
+                     
+                    info.put("comment", comment);
+                }
+               
+            } catch (IOException ex) {
+                Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return null;
+        }
+        public static java.util.Map RiskUtil3(){
+            BufferedReader bufferin=null;
+                String input = null;
+            try {
+                input = bufferin.readLine();
+            } catch (IOException ex) {
+                Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if(input.charAt(0)!='[' || input.charAt( input.length()-1 )!=']') {
+                                        } else {
+                String mode = "newsection";
                                     }
-                                    else {
-                                        comment = comment +"\n"+com;
-                                    }
-                                    info.put("comment", comment);
-                                }
-                                else {
-
-                                        if (input.charAt(0)=='[' && input.charAt( input.length()-1 )==']') {
-                                                mode="newsection";
-                                        }
+            Object mode = null;
 
                                         if ("files".equals(mode)) {
 
@@ -381,18 +399,25 @@ public class RiskUtil {
                                             
                                                 String fm = input.substring(0,space);
                                                 String val = input.substring(space+1);
-
+                                                Hashtable info = new Hashtable();
                                                 info.put( fm , val);
 
                                         }
-                                        else if ("borders".equals(mode)) {
+            return null;
+        }
+        public static java.util.Map RiskUtil4(){
+            Object mode = null;
+                       if ("borders".equals(mode)) {
                                                 // we dont care about anything in or after the borders section
-                                                break;
+                                                
                                         }
                                         else if ("countries".equals(mode)) {
+                                             Hashtable info = new Hashtable();
+                                              String input = null;
                                             info.put("countries", Integer.parseInt(input.substring(0,input.indexOf(' '))));
                                         }
                                         else if ("missions".equals(mode)) {
+                                        String input = null;
 
                                                 StringTokenizer st = new StringTokenizer(input);
                                             
@@ -412,22 +437,81 @@ public class RiskUtil {
                                                         break;
 
                                                 }
-
+                                                Vector misss=null;
                                                 misss.add( description );
 
                                         }
-                                        else if ("newsection".equals(mode)) {
-
+            return null;
+        }
+        public static java.util.Map RiskUtil5(){
+            Object mode = null;
+             if ("newsection".equals(mode)) {   
+                                                 BufferedReader bufferin=null;
+                String input = null;
+                try {
+                    input = bufferin.readLine();
+                } catch (IOException ex) {
+                    Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
                                                 mode = input.substring(1, input.length()-1); // set mode to the name of the section
 
                                         }
                                         else if (mode == null) {
+                                            BufferedReader bufferin=null;
+                                                String input = null;
+                try {
+                    input = bufferin.readLine();
+                } catch (IOException ex) {
+                    Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
                                            while (input.indexOf(' ')>0) {
-                                                info.put( input.substring(0,input.indexOf(' ')) , input.substring(input.indexOf(' ')+1) );
-                                           break;
+                                               Hashtable info = new Hashtable();
+                                            info.put( input.substring(0,input.indexOf(' ')) , input.substring(input.indexOf(' ')+1) );
+                                          
+                                         
                                            
                                            }
                                         }
+            return null;
+        }
+        public static java.util.Map RiskUtil6(){
+            boolean cards = false;
+            Hashtable info = new Hashtable();
+              if (cards) {
+                
+                           Vector misss=null;
+                          info.put("missions", (String[])misss.toArray(new String[misss.size()]) );
+                          
+                        }
+            return null;
+        }
+            public static java.util.Map loadInfo(String fileName,boolean cards) {
+
+            Hashtable info = new Hashtable();
+
+            for (int c=0;true;c++) {
+
+                BufferedReader bufferin=null;
+
+                try {
+                   
+                        RiskUtil1();
+                        bufferin= RiskUtil.readMap(RiskUtil.openMapStream(fileName));
+                        Vector misss=null;
+
+                       
+
+                        String input = bufferin.readLine();
+                        String mode = null;
+
+                        while(input != null) {
+
+                             
+                                RiskUtil2();{
+
+                                        RiskUtil3();
+                                        RiskUtil4();
+                                       RiskUtil5();
                                         // if "continents" or "cards" then just dont do anything in those sections
 
                                 }
@@ -435,10 +519,7 @@ public class RiskUtil {
                                 input = bufferin.readLine(); // get next line
                         }
 
-                        if (cards) {
-                            info.put("missions", (String[])misss.toArray(new String[misss.size()]) );
-                            misss = null;
-                        }
+                      RiskUtil6();
 
                         break;
                 }

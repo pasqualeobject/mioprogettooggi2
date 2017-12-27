@@ -19,6 +19,54 @@ public class MapMouseListener {
         this.pp = pp;
         myrisk = risk;
     }
+    
+    public static void mouseAppl1()
+    {
+    	while ( pp.getC1()!=NO_COUNTRY && pp.getC2()==NO_COUNTRY && pixColor == pp.getC1() ) {
+            pp.setC1(NO_COUNTRY);
+            pp.setC2(NO_COUNTRY);
+            pp.repaint();
+            return new int[0];
+    }
+    while( myrisk.isOwnedCurrentPlayerInt(pixColor) && ( myrisk.hasArmiesInt(pixColor) > 1) && pp.getC1() == NO_COUNTRY) {
+            pp.setC1(pixColor);
+            pp.setC2(NO_COUNTRY);
+            pp.repaint();
+            return new int[] { pixColor };
+    }
+    while ( pp.getC1() != NO_COUNTRY && myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC2() != pixColor && myrisk.canAttack( pp.getC1() , pixColor) ) {
+            pp.setC2(pixColor);
+            pp.repaint();
+            return new int[] { pp.getC1(),pixColor };
+    }
+    while( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1()!=NO_COUNTRY && pp.getC2()!=NO_COUNTRY  && ( myrisk.hasArmiesInt(pixColor) > 1) ) {
+            pp.setC1( pixColor );
+            pp.setC2(NO_COUNTRY);
+            pp.repaint();
+            return new int[] { pixColor };
+    }
+    }
+    
+    public static void mouseAppl()
+    {
+    	while( pixColor == pp.getC1() ) {
+            pp.setC1(NO_COUNTRY);
+            pp.setC2(NO_COUNTRY);
+            pp.repaint();
+            return new int[0];
+    }
+    while( myrisk.isOwnedCurrentPlayerInt(pixColor) && ( myrisk.hasArmiesInt(pixColor) > 1) ) {
+            pp.setC1(pixColor);
+            pp.setC2(NO_COUNTRY);
+            pp.repaint();
+            return new int[] {pixColor};
+    }
+    while( pp.getC1() != NO_COUNTRY && !(myrisk.isOwnedCurrentPlayerInt(pixColor)) && myrisk.canAttack( pp.getC1() , pixColor) ) {
+            pp.setC2(pixColor);
+            pp.repaint();
+            return new int[] {pp.getC1(),pixColor};
+    }
+    }
 
     public int[] mouseReleased(int x, int y,int gameState) {
 
@@ -34,50 +82,12 @@ public class MapMouseListener {
         }
         else if (gameState == RiskGame.STATE_ATTACKING) {
 
-                while( pixColor == pp.getC1() ) {
-                        pp.setC1(NO_COUNTRY);
-                        pp.setC2(NO_COUNTRY);
-                        pp.repaint();
-                        return new int[0];
-                }
-                while( myrisk.isOwnedCurrentPlayerInt(pixColor) && ( myrisk.hasArmiesInt(pixColor) > 1) ) {
-                        pp.setC1(pixColor);
-                        pp.setC2(NO_COUNTRY);
-                        pp.repaint();
-                        return new int[] {pixColor};
-                }
-                while( pp.getC1() != NO_COUNTRY && !(myrisk.isOwnedCurrentPlayerInt(pixColor)) && myrisk.canAttack( pp.getC1() , pixColor) ) {
-                        pp.setC2(pixColor);
-                        pp.repaint();
-                        return new int[] {pp.getC1(),pixColor};
-                }
+                mouseAppl();
 
         }
         else if (gameState == RiskGame.STATE_FORTIFYING) {
 
-                while ( pp.getC1()!=NO_COUNTRY && pp.getC2()==NO_COUNTRY && pixColor == pp.getC1() ) {
-                        pp.setC1(NO_COUNTRY);
-                        pp.setC2(NO_COUNTRY);
-                        pp.repaint();
-                        return new int[0];
-                }
-                while( myrisk.isOwnedCurrentPlayerInt(pixColor) && ( myrisk.hasArmiesInt(pixColor) > 1) && pp.getC1() == NO_COUNTRY) {
-                        pp.setC1(pixColor);
-                        pp.setC2(NO_COUNTRY);
-                        pp.repaint();
-                        return new int[] { pixColor };
-                }
-                while ( pp.getC1() != NO_COUNTRY && myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC2() != pixColor && myrisk.canAttack( pp.getC1() , pixColor) ) {
-                        pp.setC2(pixColor);
-                        pp.repaint();
-                        return new int[] { pp.getC1(),pixColor };
-                }
-                while( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1()!=NO_COUNTRY && pp.getC2()!=NO_COUNTRY  && ( myrisk.hasArmiesInt(pixColor) > 1) ) {
-                        pp.setC1( pixColor );
-                        pp.setC2(NO_COUNTRY);
-                        pp.repaint();
-                        return new int[] { pixColor };
-                }
+                mouseAppl1();
 
         }
         else if (gameState == RiskGame.STATE_SELECT_CAPITAL) {
@@ -97,6 +107,34 @@ public class MapMouseListener {
                 pp.repaint();
         }
     }
+    
+    public static void mouseProc()
+    {
+    	while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && (myrisk.hasArmiesInt(pixColor) > 1) ) {
+            cc = pixColor;
+            break;
+    }
+    while ( !(myrisk.isOwnedCurrentPlayerInt(pixColor)) && pp.getC1() != NO_COUNTRY && myrisk.canAttack( pp.getC1() , pixColor) ) {
+            cc = pixColor;
+            break;
+    }
+    
+    
+    public static void mouseM1()
+    {
+    	
+    	while( myrisk.isOwnedCurrentPlayerInt(pixColor) && (myrisk.hasArmiesInt(pixColor) > 1 && pp.getC1() == NO_COUNTRY ) ) {
+    		cc = pixColor;
+    		break;
+    	}
+    	while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1() != NO_COUNTRY && myrisk.canAttack( pp.getC1() , pixColor) ) {
+    		cc = pixColor;
+    		break;
+    	}
+    	while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1() != NO_COUNTRY && pp.getC2() != NO_COUNTRY && (myrisk.hasArmiesInt(pixColor) > 1) ) {
+    		cc = pixColor;
+    }
+    
 
     public void mouseMoved(int x,int y,int gameState) {
 
@@ -112,26 +150,11 @@ public class MapMouseListener {
                 }
         }
         else if ( gameState == RiskGame.STATE_ATTACKING) {
-                while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && (myrisk.hasArmiesInt(pixColor) > 1) ) {
-                        cc = pixColor;
-                        break;
-                }
-                while ( !(myrisk.isOwnedCurrentPlayerInt(pixColor)) && pp.getC1() != NO_COUNTRY && myrisk.canAttack( pp.getC1() , pixColor) ) {
-                        cc = pixColor;
-                        break;
+                mouseProc();
                 }
         }
         else if ( gameState == RiskGame.STATE_FORTIFYING) {
-                while( myrisk.isOwnedCurrentPlayerInt(pixColor) && (myrisk.hasArmiesInt(pixColor) > 1 && pp.getC1() == NO_COUNTRY ) ) {
-                        cc = pixColor;
-                        break;
-                }
-               while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1() != NO_COUNTRY && myrisk.canAttack( pp.getC1() , pixColor) ) {
-                        cc = pixColor;
-                        break;
-                }
-                while ( myrisk.isOwnedCurrentPlayerInt(pixColor) && pp.getC1() != NO_COUNTRY && pp.getC2() != NO_COUNTRY && (myrisk.hasArmiesInt(pixColor) > 1) ) {
-			cc = pixColor;
+                mouseM1();
 			break;
 		}
         }
