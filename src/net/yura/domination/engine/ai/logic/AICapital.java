@@ -54,6 +54,10 @@ public class AICapital extends AIDomination {
 		return border;
 	}
 	
+	/**
+	 * Method probMethod
+	 * @return boolean
+	 */
 	public static boolean probMethod()
 	{
 		if (highProbability || (isIncreasingSet() && (ratio/3 > percentOwned ))
@@ -100,6 +104,11 @@ public class AICapital extends AIDomination {
 		return null;
 	}
 	
+	/**
+	 * mapEntryMethod
+	 * Method without return
+	 */
+	
 	public static void mapEntryMethod()
 	{
 		Map.Entry<Player, Integer> e = i.next();
@@ -145,7 +154,7 @@ public class AICapital extends AIDomination {
 	}
 	
 	/**
-	 * Game State
+	 * Method gameState
 	 */
 	
 	public static void gameState()
@@ -168,6 +177,10 @@ public class AICapital extends AIDomination {
 		}
 	}
 	
+	/**
+	 * method without return
+	 * Procedure myOwendMeth
+	 */
 	public static void myowendMeth()
 	{
 		while (myowned < 2) {
@@ -201,6 +214,10 @@ public class AICapital extends AIDomination {
 		return null;
 	}
 	
+	/**
+	 * targetAttack Method
+	 * @return String
+	 */
 	public static String targetAttack()
 	{
 		Country c = i.next();
@@ -216,6 +233,10 @@ public class AICapital extends AIDomination {
 		boolean met = remaingIs();
 	}
 	
+	/**
+	 * Method remaingIs
+	 * @return boolean value
+	 */
 	public static boolean remaingIs()
 	{
 		if (at.remaining < 1) {
@@ -232,7 +253,11 @@ public class AICapital extends AIDomination {
 		return true;
 	}
 	
-	public static void toAttachMethod()
+	/**
+	 * Method toAttachMethod()
+	 * @return String
+	 */
+	public static String toAttachMethod()
 	{
 		if (allOrNone) {
 			EliminationTarget et = new EliminationTarget();
@@ -248,6 +273,7 @@ public class AICapital extends AIDomination {
 		if (attack) {
 			return getAttack(targets, at, route, start);
 		}
+		return getPlaceCommand(start, -at.remaining + 1);
 	}
 
 	/**
