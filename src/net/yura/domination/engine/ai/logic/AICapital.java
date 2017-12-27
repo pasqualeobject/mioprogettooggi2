@@ -201,7 +201,7 @@ public class AICapital extends AIDomination {
 		return null;
 	}
 	
-	public static void targetAttack()
+	public static String targetAttack()
 	{
 		Country c = i.next();
 		if (c.getOwner() == player || (target != null && target != c.getOwner()))
@@ -248,7 +248,6 @@ public class AICapital extends AIDomination {
 		if (attack) {
 			return getAttack(targets, at, route, start);
 		}
-		return getPlaceCommand(start, -at.remaining + 1);
 	}
 
 	/**
