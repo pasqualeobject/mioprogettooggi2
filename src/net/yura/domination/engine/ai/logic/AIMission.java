@@ -70,6 +70,9 @@ public class AIMission extends AIDomination {
 		return result;
 	}
 	
+	/**
+	 * 
+	 */
 	protected int getMinPlacement() {
 		return Math.max(1, player.getMission().getNoofarmies());
 	}
