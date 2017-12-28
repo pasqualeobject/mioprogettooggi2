@@ -1873,20 +1873,36 @@ public class AIDomination extends AISubmissive {
     private void attackA(int pathRemaining, int remaining,boolean attack,GameState gameState, AttackTarget attackTarget,
                          HashSet<Country> toTake,Set<Country> countriesTaken,int route, boolean lowProbability,
                          EliminationTarget et,Map<Country,AttackTarget> targets,Set<Country> path,Country attackFrom) {
-        if ((pathRemaining + remaining >= 1
-                || (attackTarget.remaining + remaining >= 2 && attackFrom.getArmies() + remaining >= 4))
-                && (et.allOrNone || isGoodIdea(gameState, targets, route, attackTarget, attackFrom, et, attack))) {
+        if (checkPath(pathRemaining,remaining,attackTarget,attackFrom)
+                && checkAnotherPath(gameState,targets,route,et,attack,attackTarget,attackFrom)) {
             //TODO this is a choice point if there is more than 1 valid path
             path = getPath(attackTarget, targets, route, attackFrom);
-            //check to see if this path is good
-            if (Collections.disjoint(path, countriesTaken)) {
-                //check to see if we can append this path with a nearest neighbor path
-                pathRem(pathRemaining,remaining,attack,gameState,attackTarget,toTake,countriesTaken,path,route,lowProbability);
-            }
+            checkPathern(pathRemaining,remaining,attack,gameState,attackTarget,toTake,countriesTaken,route,lowProbability,path);
         } else if (attackAllIn(et) && checkIfUWhant(attackTarget,remaining,gameState)) {
             //allow hard players to always pursue a single country elimination
             path = getPath(attackTarget, targets, route, attackFrom);
         }
+    }
+    private void checkPathern(int pathRemaining, int remaining,boolean attack,GameState gameState, AttackTarget attackTarget,
+                              HashSet<Country> toTake,Set<Country> countriesTaken,int route, boolean lowProbability,Set<Country> path) {
+        if (Collections.disjoint(path, countriesTaken)) {
+            //check to see if we can append this path with a nearest neighbor path
+            pathRem(pathRemaining,remaining,attack,gameState,attackTarget,toTake,countriesTaken,path,route,lowProbability);
+        }
+    }
+    private boolean checkAnotherPath(GameState gameState,Map<Country,AttackTarget> targets,int route,EliminationTarget et,boolean attack,
+                                     AttackTarget attackTarget,Country attackFrom) {
+        boolean check = false;
+        if((et.allOrNone || isGoodIdea(gameState, targets, route, attackTarget, attackFrom, et, attack)))
+            check = true;
+        return check;
+    }
+    private boolean checkPath(int pathRemaining, int remaining,AttackTarget attackTarget,Country attackFrom) {
+        boolean check = false;
+        if((pathRemaining + remaining >= 1
+                || (attackTarget.remaining + remaining >= 2 && attackFrom.getArmies() + remaining >= 4)))
+            check = true;
+        return check;
     }
     private void pathRem(int pathRemaining, int remaining,boolean attack,GameState gameState, AttackTarget attackTarget,
                          HashSet<Country> toTake,Set<Country> countriesTaken,Set<Country> path, int route, boolean lowProbability) {
@@ -1966,10 +1982,7 @@ public class AIDomination extends AISubmissive {
                 AttackTarget at = et.attackTargets.get(i);
                 int route = findBestRoute(attackable, gameState, attack, null, at, et.ps.p, targets);
                 Country attackFrom = attackable.get(route);
-                if (((at.routeRemaining[route] > 0 && (selection == null || at.routeRemaining[route] <
-                        selection.routeRemaining[bestRoute] || selection.routeRemaining[bestRoute] < 1))
-                        || (at.remaining > 1 && attackFrom.getArmies() > 3 && (selection != null && at.remaining < selection.remaining)))
-                        && isGoodIdea(gameState, targets, route, at, attackFrom, et, attack)) {
+                if ((checkRouteRem(at,route,selection,bestRoute) || checkRem(at,gameState,selection,attackFrom,route,targets,et,attack))) {
                     selection = at;
                     bestRoute = route;
                 }
@@ -1977,6 +1990,21 @@ public class AIDomination extends AISubmissive {
             s = getMove(targets, attack, selection, bestRoute, attackable.get(bestRoute));
         }
         return s;
+    }
+    private boolean checkRem(AttackTarget at,GameState gameState, AttackTarget selection,Country attackFrom,int route,Map<Country,AttackTarget> targets,
+                             EliminationTarget et,boolean attack) {
+        boolean check = false;
+        if((at.remaining > 1 && attackFrom.getArmies() > 3 && (selection != null && at.remaining < selection.remaining))
+                        && isGoodIdea(gameState, targets, route, at, attackFrom, et, attack))
+            check = true;
+        return check;
+    }
+    private boolean checkRouteRem(AttackTarget at,int route,AttackTarget selection,int bestRoute) {
+        boolean check = false;
+        if((at.routeRemaining[route] > 0 && (selection == null || at.routeRemaining[route] <
+                selection.routeRemaining[bestRoute] || selection.routeRemaining[bestRoute] < 1)))
+            check = true;
+        return check;
     }
     /**
      * @see Arrays#copyOf(int[], int)
