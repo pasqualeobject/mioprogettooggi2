@@ -2181,57 +2181,199 @@ public class AIDomination extends AISubmissive {
      *  - true neutral
      *  - false slightly pessimistic
      */
-    private void searchTargets(Map<Country, AttackTarget> targets, Country startCountry, int startArmies, final int start, int totalStartingPoints, int extra, boolean attack, final Set<Country> wayPoints, final Set<Country> exclusions, GameState gameState) {
+    private void searchTargets(Map<Country, AttackTarget> targets, Country startCountry, int startArmies, final int start,
+                               int totalStartingPoints, int extra, boolean attack, final Set<Country> wayPoints,
+                               final Set<Country> exclusions, GameState gameState) {
         PriorityQueue<AttackTarget> remaining = new PriorityQueue<AttackTarget>(11, new Comparator<AttackTarget>() {
-            public int compare1(){
-                AttackTarget o1;
-                AttackTarget o2;
-                if (wayPoints.contains(o2.targetCountry)) {
-                            int outs1 = neighboursOpen(o1.targetCountry);
-                            int outs2 = neighboursOpen(o2.targetCountry);
-                            while((outs1 == 1)&&(outs2 == 1)) {
-                                if (outs2 == 1) {
-                                    int diff = o2.routeRemaining[start] - o1.routeRemaining[start];
-                                    //TODO: handle terminal navigation better
-                                    return -diff; //hardest first
-                                }
-                                return 1;
-                            } while(outs2 == 1) {
-                                return -1;
-                            }
-                            int diff = o2.routeRemaining[start] - o1.routeRemaining[start];
-                            return diff + 2*(outs1 - outs2);
-                        }
-                        return -1;
-            }
             @Override
             public int compare(AttackTarget o1, AttackTarget o2) {
                 int diff = o2.routeRemaining[start] - o1.routeRemaining[start];
-
-                while(type == PLAYER_AI_HARD) {
-                    //heuristic improvement for hard players.
-                    //give preference to waypoints based upon presumed navigation order
-                    if(wayPoints.contains(o1.targetCountry)) {
-                        compare1();
-                    }
-                    if (wayPoints.contains(o2)) {
-                        return 1;
-                    }
-                }
+                diff = checkCompare(o1,o2,wayPoints,exclusions,start);
                 return diff;
             }
-
-            public int neighboursOpen( Country c) {
-                List<Country> neighbours = c.getNeighbours();
-                int count = 0;
-                for (int i=0; i<neighbours.size(); i++) {
-                    if ( neighbours.get(i).getOwner() != player && !exclusions.contains(c)) {
-                        count++;
-                    }
-                }
-                return count;
-            }
         });
+        method(gameState);
+        AttackTarget at = new AttackTarget(totalStartingPoints, startCountry);
+        at.routeRemaining[start] = startArmies;
+        remaining.add(at);
+        while (!remaining.isEmpty()) {
+            AttackTarget current = remaining.poll();
+            method2(targets,wayPoints,current,start,exclusions,startCountry,remaining);
+            int attackForce = current.routeRemaining[start];
+            attackForce -= getMinPlacement();
+            attackForce -= Math.min(current.targetCountry.getArmies()/(attack?3:2), current.depth);
+            if (attackForce + extra < 1) {
+                break;
+            }
+            List<Country> v = current.targetCountry.getNeighbours();
+            for (int i = 0; i < v.size(); i++) {
+                Country c = v.get(i);
+                AttackTarget cumulativeForces = targets.get(c);
+                if (cumulativeForces == null && exclusions.contains(c)) {
+                    cumulativeForces = new AttackTarget(totalStartingPoints, c);
+                    targets.put(c, cumulativeForces);
+                }
+                cumulativeForces.depth = current.depth+1;
+                int available = attackForce;
+                int toAttack = c.getArmies();
+                int[] toArray = createAvailableToAttack(attack,available,toAttack,gameState);
+                available = toArray[0];
+                toAttack = toArray[1];
+                available = createAvailable(attack,available,toAttack);
+                cumulativeForces.attackPath[start] = current.targetCountry;
+                cumulativeForces.routeRemaining[start] = available;
+                cumulativeChack(cumulativeForces, available);
+                remaining.add(cumulativeForces);
+            }
+        }
+    }
+    private int compare1(Set<Country> wayPoints,Set<Country> exclusions,int start){
+        AttackTarget o1 = null;
+        AttackTarget o2 = null;
+        int returnValue = -1;
+        if (wayPoints.contains(o2.targetCountry)) {
+            int outs1 = neighboursOpen(o1.targetCountry,exclusions);
+            int outs2 = neighboursOpen(o2.targetCountry,exclusions);
+            returnValue = checkReturnValue(o1,o2,start,outs1,outs2);
+            int diff = o2.routeRemaining[start] - o1.routeRemaining[start];
+            return diff + 2*(outs1 - outs2);
+        }
+        return returnValue;
+    }
+    private int checkCompare(AttackTarget o1,AttackTarget o2,Set<Country> wayPoints,Set<Country> exclusions, int start) {
+        int value = 0;
+        while(type == PLAYER_AI_HARD) {
+            //heuristic improvement for hard players.
+            //give preference to waypoints based upon presumed navigation order
+            if(wayPoints.contains(o1.targetCountry)) {
+                compare1(wayPoints, exclusions,start);
+            }
+            if (wayPoints.contains(o2)) {
+                value = 1;
+            }
+        }
+        return value;
+    }
+    private int neighboursOpen(Country c,Set<Country> exclusions) {
+        List<Country> neighbours = c.getNeighbours();
+        int count = 0;
+        for (int i=0; i<neighbours.size(); i++) {
+            if ( neighbours.get(i).getOwner() != player && !exclusions.contains(c)) {
+                count++;
+            }
+        }
+        return count;
+    }
+    private int checkReturnValue(AttackTarget o1, AttackTarget o2,int start, int outs1,int outs2) {
+        int value = 0;
+        while((outs1 == 1)&&(outs2 == 1)) {
+            if (outs2 == 1) {
+                int diff = o2.routeRemaining[start] - o1.routeRemaining[start];
+                //TODO: handle terminal navigation better
+                value = -diff; //hardest first
+            }
+            value = 1;
+        } while(outs2 == 1) {
+            value = -1;
+        }
+        return value;
+    }
+    private int[] createAvailableToAttack(boolean attack, int available, int toAttack, GameState gameState) {
+        int[] array = new int[2];
+        final int TO_ATTACK = 0;
+        final int AVAILABLE = 1;
+        if (checkDefence2() || checkDefence(gameState) || checkDefence3(gameState)) {
+            int[] toArray = createAttack(attack,toAttack,available);
+            array[TO_ATTACK] = toArray[0];
+            array[AVAILABLE] = toArray[1];
+        } else {
+            //assume 3
+            int[] toArray = createAttack2(attack,toAttack,available);
+            array[TO_ATTACK] = toArray[0];
+            array[AVAILABLE] = toArray[1];
+        }
+        return array;
+    }
+    private boolean checkDefence3(GameState gameState) {
+        boolean check = false;
+        if(gameState.me.p.getType() == PLAYER_AI_EASY)
+            check = true;
+        return check;
+    }
+    private boolean checkDefence(GameState gameState) {
+        boolean check = false;
+        if(gameState.me.playerValue > gameState.orderedPlayers.get(0).playerValue)
+            check = true;
+        return check;
+    }
+    private boolean checkDefence2() {
+        boolean check = false;
+        if(game.getMaxDefendDice() == 2)
+            check = true;
+        return check;
+    }
+    private void cumulativeChack(AttackTarget cumulativeForces, int available) {
+        if (cumulativeForces.remaining>=0 && available>=0) {
+            cumulativeForces.remaining = cumulativeForces.remaining += available;
+        } else {
+            cumulativeForces.remaining = Math.max(cumulativeForces.remaining, available);
+        }
+    }
+    private int createAvailable(boolean attack, int available, int toAttack) {
+        int ava = 0;
+        if (attack && available == toAttack + 1 && toAttack <= 2) {
+            ava = 1; //special case to allow 4 on 2 and 3 on 1 attacks
+        } else {
+            if (game.getMaxDefendDice() == 2 || toAttack <= 2) {
+                ava = available - 3*toAttack/2 - toAttack%2;
+            } else {
+                ava = available - 2*toAttack;
+            }
+        }
+        return ava;
+    }
+    private int[] createAttack(boolean attack, int toAttack, int available) {
+        int[] array = new int[2];
+        final int TO_ATTACK = 0;
+        final int AVAILABLE = 1;
+        if (attack) {
+            while (toAttack >= 10 || (available >= 10 && toAttack >= 5)) {
+                array[TO_ATTACK] -= 4;
+                array[AVAILABLE] -= 3;
+            }
+        }
+        while (toAttack >= 5 || (available >= 5 && toAttack >= 2)) {
+            array[TO_ATTACK] -= 2;
+            array[AVAILABLE] -= 2;
+        }
+        return array;
+    }
+    private int[] createAttack2(boolean attack, int toAttack, int available) {
+        int[] array = new int[2];
+        final int TO_ATTACK = 0;
+        final int AVAILABLE = 1;
+        if (attack) {
+            int rounds = (toAttack - 3)/3;
+            if (rounds > 0) {
+                array[TO_ATTACK] -= 3*rounds;
+                array[AVAILABLE] -= 3*rounds;
+            }
+        }
+        return array;
+    }
+    private void method2(Map<Country,AttackTarget> targets,Set<Country> wayPoints,AttackTarget current,int start,Set<Country> exclusions,Country startCountry,
+                         PriorityQueue<AttackTarget> remaining) {
+        if (wayPoints.contains(current)) {
+            Set<Country> path = getPath(current, targets, start, startCountry);
+            exclusions.addAll(path);
+            startCountry = current.targetCountry;
+            targets.keySet().retainAll(exclusions);
+            remaining.clear();
+            remaining.add(current);
+        }
+    }
+    private void method(GameState gameState) {
+        boolean attack = true;
         if (type == PLAYER_AI_HARD) {
             double ratio = gameState.me.playerValue / gameState.orderedPlayers.get(0).playerValue;
             if (ratio < .4) {
@@ -2240,94 +2382,7 @@ public class AIDomination extends AISubmissive {
         } else if (type == PLAYER_AI_EASY) {
             attack = false; //over estimate
         }
-        AttackTarget at = new AttackTarget(totalStartingPoints, startCountry);
-        at.routeRemaining[start] = startArmies;
-        remaining.add(at);
-        while (!remaining.isEmpty()) {
-            AttackTarget current = remaining.poll();
-
-            //if this is the nearest waypoint, continue the search from this point
-            if (wayPoints.contains(current)) {
-                Set<Country> path = getPath(current, targets, start, startCountry);
-                exclusions.addAll(path);
-                startCountry = current.targetCountry;
-                targets.keySet().retainAll(exclusions);
-                remaining.clear();
-                remaining.add(current);
-                continue;
-            }
-
-            int attackForce = current.routeRemaining[start];
-            attackForce -= getMinPlacement();
-            attackForce -= Math.min(current.targetCountry.getArmies()/(attack?3:2), current.depth);
-
-            if (attackForce + extra < 1) {
-                break;
-            }
-
-            List<Country> v = current.targetCountry.getNeighbours();
-
-            for (int i = 0; i < v.size(); i++) {
-                Country c = v.get(i);
-                if (c.getOwner() == player) {
-                    continue;
-                }
-                AttackTarget cumulativeForces = targets.get(c);
-                if (cumulativeForces == null) {
-                    if (exclusions.contains(c)) {
-                        continue;
-                    }
-                    cumulativeForces = new AttackTarget(totalStartingPoints, c);
-                    targets.put(c, cumulativeForces);
-                } else if (cumulativeForces.routeRemaining[start] != Integer.MIN_VALUE) {
-                    continue;
-                }
-                cumulativeForces.depth = current.depth+1;
-                int available = attackForce;
-                int toAttack = c.getArmies();
-                if (game.getMaxDefendDice() == 2 || gameState.me.playerValue>gameState.orderedPlayers.get(0).playerValue || gameState.me.p.getType() == PLAYER_AI_EASY) {
-                    if (attack) {
-                        while (toAttack >= 10 || (available >= 10 && toAttack >= 5)) {
-                            toAttack -= 4;
-                            available -= 3;
-                        }
-                    }
-                    while (toAttack >= 5 || (available >= 5 && toAttack >= 2)) {
-                        toAttack -= 2;
-                        available -= 2;
-                    }
-
-                } else {
-                    //assume 3
-                    if (attack) {
-                        int rounds = (toAttack - 3)/3;
-                        if (rounds > 0) {
-                            toAttack -= 3*rounds;
-                            available -= 3*rounds;
-                        }
-                    }
-                }
-                if (attack && available == toAttack + 1 && toAttack <= 2) {
-                    available = 1; //special case to allow 4 on 2 and 3 on 1 attacks
-                } else {
-                    if (game.getMaxDefendDice() == 2 || toAttack <= 2) {
-                        available = available - 3*toAttack/2 - toAttack%2;
-                    } else {
-                        available = available - 2*toAttack;
-                    }
-                }
-                cumulativeForces.attackPath[start] = current.targetCountry;
-                cumulativeForces.routeRemaining[start] = available;
-                if (cumulativeForces.remaining>=0 && available>=0) {
-                    cumulativeForces.remaining = cumulativeForces.remaining += available;
-                } else {
-                    cumulativeForces.remaining = Math.max(cumulativeForces.remaining, available);
-                }
-                remaining.add(cumulativeForces);
-            }
-        }
     }
-
     public String getBattleWon() {
         GameState gameState = getGameState(player, false);
         return getBattleWon(gameState);
