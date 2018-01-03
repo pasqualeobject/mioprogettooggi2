@@ -98,7 +98,7 @@ public class Statistic implements Serializable {
     }
 
     // we may have loaded a old game where statistics.length is 12
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+    private void RObj(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (statistics.length < 13) {
             int[] old = statistics;

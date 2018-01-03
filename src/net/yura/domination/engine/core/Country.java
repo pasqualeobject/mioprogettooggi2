@@ -243,20 +243,20 @@ public class Country implements Serializable {
             return (int)Math.sqrt(px * px + py * py);
         }
 
-	private void writeObject(ObjectOutputStream out) throws IOException {
-		if (out instanceof RiskObjectOutputStream) {
-			ObjectOutputStream.PutField putField = out.putFields();
+	private void wObJe(ObjectOutputStream outX1) throws IOException {
+		if (outX1 instanceof RiskObjectOutputStream) {
+			ObjectOutputStream.PutField putField = outX1.putFields();
 			putField.put("owner", owner);
 			putField.put("armies", armies);
-			out.writeFields();
+			outX1.writeFields();
 		}
                 else {
-                    out.defaultWriteObject();
+                    outX1.defaultWriteObject();
 		}
 	}
 	
-	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-		in.defaultReadObject();
+	private void rEndPOb(ObjectInputStream XIn1) throws IOException, ClassNotFoundException {
+		XIn1.defaultReadObject();
 		this.incomingNeighbours = new ArrayList<Country>(2);
 		this.neighbours = new Vector();
 	}

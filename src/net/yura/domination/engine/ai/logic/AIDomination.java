@@ -957,8 +957,9 @@ public class AIDomination extends AISubmissive {
             target_null();
         }
     }
-    private String lkBy_g(List<Country> yH, GameState SSg,
-                                  Map<Country, AttackTarget> t1, boolean prS, List<EliminationTarget> c1h) {
+    private String StrChaRec(List<Country> yH, GameState S1,
+                                  Map<Country, AttackTarget> t1, 
+                                  boolean prS, List<EliminationTarget> c1h) {
         if (this.type == AIDomination.PLAYER_AI_EASY) {
             return null;
         }
@@ -980,8 +981,10 @@ public class AIDomination extends AISubmissive {
     /**
      * one last pass looking to get a risk card or reduce forces
      */
-    private String xy_Uk(boolean at, List<Country> abl,
-                               GameState gPSt, Map<Country, AttackTarget> tg1, boolean sAt, List<Country> brd) {
+    private String ChLiStr(boolean at, List<Country> abl,
+                               GameState gPSt, 
+                               Map<Country, AttackTarget> tg1, boolean sAt, 
+                               List<Country> brd) {
         boolean isTooWeak = isTooWeak(gPSt) && gPSt.me.defenseValue < .5*gPSt.orderedPlayers.get(0).defenseValue;
         boolean forceReduction = game.isCapturedCountry() || game.getCards().isEmpty() || gPSt.me.playerValue > 1.5*gPSt.orderedPlayers.get(0).playerValue;
         List<AttackTarget> sorted = new ArrayList<AttackTarget>(tg1.values());
@@ -1004,7 +1007,7 @@ public class AIDomination extends AISubmissive {
         }
         return s;
     }
-    private String Size(Country lNm,GameState gVSS,
+    private String StrComA(Country lNm,GameState gVSS,
                                   boolean BXp, Map<Country, AttackTarget> ttG, int bSS,
                                   AttackTarget th, Country FTh) {
         String s = null;
@@ -1796,14 +1799,15 @@ public class AIDomination extends AISubmissive {
         }
         return collateral;
     }
-    private void checkFor(List<Country> t,Map<Country,AttackTarget> targets, GameState gameState, boolean attack,List<Country> borders,int best,
-                              List<Country> attackable) {
+    private void cKSzPO(List<Country> t,Map<Country,AttackTarget> t1, 
+    		GameState LSt1, boolean CLy1,List<Country> borders,int best,
+                              List<Country> b1Y) {
         int size = t.size();
         for (int j = 0; j < size; j++) {
             Country target = t.get(j);
-            AttackTarget attackTarget = targets.get(target);
-            int route = findBestRoute(attackable, gameState, attack, null, attackTarget, gameState.orderedPlayers.get(0).p, targets);
-            Country attackFrom = attackable.get(route);
+            AttackTarget attackTarget = t1.get(target);
+            int route = findBestRoute(b1Y, LSt1, CLy1, null, attackTarget, LSt1.orderedPlayers.get(0).p, t1);
+            Country attackFrom = b1Y.get(route);
             int cost = attackFrom.getArmies() - attackTarget.routeRemaining[route];
             createCost(borders,attackFrom);
             createCostOther(cost,best,route,attackTarget);
@@ -1939,7 +1943,8 @@ public class AIDomination extends AISubmissive {
             exHaCo_Set(fx,rnm,sxc,paz,yv,ttK,vT,path,rtth,lPp);
         }
     }
-    private boolean isAllNor(GameState g1,Map<Country,AttackTarget> tv1,int route,EliminationTarget et,boolean v8f,
+    private boolean iEmaGe(GameState g1,Map<Country,AttackTarget> tv1,
+    		int route,EliminationTarget et,boolean v8f,
                                      AttackTarget k9z,Country xt) {
         boolean check = false;
         if((et.allOrNone || ps_R_Cou(g1, tv1, route, k9z, xt, et, v8f)))
@@ -1990,7 +1995,8 @@ public class AIDomination extends AISubmissive {
             break;
         }
     }
-    private void n_CostBe(int pRe, int rm,AttackTarget sn,Country Af,boolean k1,AttackTarget gT, int bestCost,
+    private void RAttXh(int pRe, int rm,AttackTarget sn,Country Af,
+    		boolean k1,AttackTarget gT, int bestCost,
                         int route) {
         if (pRe < 1) {
             rm += pRe -1;
