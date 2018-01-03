@@ -971,15 +971,4 @@ public class CollisionPhysics {
       rotateResult[1] = -x * sinTheta + y * cosTheta;
       return rotateResult;
    }
-
-   /**
-    * Helper method to get the absolute speed.
-    * 
-    * @param SpX1 : speed in x-direction.
-    * @param SpX2 : speed in y-direction.
-    * @return : magnitude of speed.
-    */
-   private static double gSSp(double SpX1, double SpX2) {
-      return Math.sqrt(SpX1 * SpX1 + SpX2 * SpX2);
-   }
 }

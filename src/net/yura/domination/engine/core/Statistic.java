@@ -96,15 +96,4 @@ public class Statistic implements Serializable {
         }
 	return statistics[ statType.ordinal() ];
     }
-
-    // we may have loaded a old game where statistics.length is 12
-    private void RObj(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        if (statistics.length < 13) {
-            int[] old = statistics;
-            statistics = new int[13];
-            System.arraycopy(old, 0, statistics, 0, old.length);
-        }
-    }
-
 }

@@ -189,15 +189,10 @@ public class Continent implements Serializable {
 		territoriesContained.add(t);
 	}
 
-	public boolean equals(Object o) {
-
-		return (o != null &&
-			o instanceof Continent &&
-			((Continent)o).name.equals(name) &&
-			((Continent)o).idString.equals(idString) &&
-			((Continent)o).armyValue == armyValue
-		);
-
+	public boolean equals(Continent otherContinent) {
+		boolean isEqual = false;
+		if(otherContinent.name.equals(name) && otherContinent.idString.equals(idString) && (otherContinent.armyValue == armyValue))
+			isEqual = true;
+		return isEqual;
 	}
-
 }
