@@ -106,10 +106,10 @@ public class Player implements Serializable {
 
     }
 
-    public double[] getStatistics(StatType type) {
+    public double[] gStat(StatType t1) {
 	double[] statistics = new double[ Statistics.size() ];
 	for (int c=0; c< statistics.length ; c++) {
-	    statistics[c] = ((Statistic)Statistics.elementAt(c)).get(type);
+	    statistics[c] = ((Statistic)Statistics.elementAt(c)).get(t1);
 	}
 	return statistics;
     }
@@ -290,8 +290,8 @@ public class Player implements Serializable {
         return territoriesOwned.size();
     }
 
-    public void newCountry(Country newCountry) {
-        territoriesOwned.addElement(newCountry);
+    public void newCountry(Country nC1) {
+        territoriesOwned.addElement(nC1);
     }
 
     /**

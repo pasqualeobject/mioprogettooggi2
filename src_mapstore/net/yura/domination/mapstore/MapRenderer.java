@@ -89,9 +89,10 @@ public class MapRenderer extends DefaultListCellRenderer {
         return context;
     }
 
-    public Component getListCellRendererComponent(Component list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        Component c = super.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
-        this.list = list;
+    public Component GListK(Component l1,
+    		Object value, int ix1, boolean Is1, boolean Ch1) {
+        Component c = super.getListCellRendererComponent(l1, null, ix1, Is1, Ch1);
+        this.list = l1;
         line2 = null; // reset everything
         map = null;
         String iconUrl=null;

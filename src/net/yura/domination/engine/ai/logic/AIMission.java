@@ -115,13 +115,14 @@ public class AIMission extends AIDomination {
 	}
 	
 	@Override
-	protected boolean shouldProactivelyFortify(Continent co, boolean attack,
-		List<Country> attackable, GameState gameState,
-		Map<Country, AttackTarget> targets, boolean pressAttack,
+	protected boolean SProAct(Continent co, 
+			boolean at1,
+		List<Country> Bl1, GameState gE1,
+		Map<Country, AttackTarget> t1, boolean PAk1,
 		List<EliminationTarget> continents) {
-		boolean result = super.shouldProactivelyFortify(co, attack, attackable, gameState, targets,
-			pressAttack, continents);
-		if (result && isTargetContinent(co) && gameState.me.owned.size() > 0) {
+		boolean result = super.shouldProactivelyFortify(co, at1, Bl1, gE1, t1,
+			PAk1, continents);
+		if (result && isTargetContinent(co) && gE1.me.owned.size() > 0) {
 			return false;
 		}
 		return result;

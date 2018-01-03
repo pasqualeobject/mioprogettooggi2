@@ -14,17 +14,17 @@ public class GetMap extends Observable implements MapServerListener {
     String filename;
 
     /**
-     * Should always use {@link #getMap(java.lang.String, java.util.Observer) }
+     * Should always use {@link #gMapL(java.lang.String, java.util.Observer) }
      */
     private GetMap() { }
 
-    public static void getMap(String filename, Observer gml) {
+    public static void gMapL(String fnm1, Observer gml) {
         GetMap get = new GetMap();
-        get.filename = filename;
+        get.filename = fnm1;
         get.addObserver(gml);
         get.client = new MapServerClient(get);
         get.client.start();
-        get.client.makeRequestXML(MapChooser.MAP_PAGE, "mapfile", filename);
+        get.client.makeRequestXML(MapChooser.MAP_PAGE, "mapfile", fnm1);
     }
 
     public void gotResultMaps(String url, List maps) {

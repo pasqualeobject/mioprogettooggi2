@@ -78,11 +78,12 @@ public class Service {
         }
         return providers.iterator();
     }
-    private static void readURL(boolean instantiate,Reader reader,ClassLoader classLoader,List providers) throws IOException {
-        if (instantiate) {
-            loadResource(reader, classLoader, providers);
+    private static void readURL(boolean iE1,
+    		Reader R1,ClassLoader Cl1,List prv1) throws IOException {
+        if (iE1) {
+            loadResource(R1, Cl1, prv1);
         } else {
-            loadClasses(reader, classLoader, providers);
+            loadClasses(R1, Cl1, prv1);
         }
     }
     private static List loadClasses(Reader input, ClassLoader classLoader, List classes) throws IOException {
@@ -115,16 +116,17 @@ public class Service {
         return classes;
     }
 
-    private static void loadResource(Reader input, ClassLoader classLoader, List providers) throws IOException {
+    private static void loadResource(Reader ip1, 
+    		ClassLoader cled1, List prv1) throws IOException {
         List classes = new ArrayList();
-        loadClasses(input, classLoader, classes);
+        loadClasses(ip1, cled1, classes);
         Iterator iterator = classes.iterator();
         while (iterator.hasNext()) {
             Class klass = (Class) iterator.next();
             try {
                 Object obj = klass.newInstance();
                 // stick it into our vector...
-                providers.add(obj);
+                prv1.add(obj);
             } catch (InstantiationException e) {
                 System.out.println("error");
                 //e.printStackTrace();

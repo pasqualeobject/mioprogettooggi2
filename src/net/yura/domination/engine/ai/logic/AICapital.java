@@ -74,8 +74,11 @@ public class AICapital extends AIDomination {
      * Overrides the planning behavior to consider taking capital logic
      */
     @Override
-    protected String planObjective(boolean attack, List<Country> attackable, GameState gameState, Map<Country, AttackTarget> targets,Set<Country> allCountriesTaken, boolean pressAttack,
-                                   boolean shouldEndAttack, boolean highProbability) {
+    protected String planObjective(boolean ak1, List<Country> 
+    
+    Ack1, GameState SsI1, Map<Country, 
+    AttackTarget> tg1,Set<Country> ATk1, boolean PAk,
+                                   boolean sAkc, boolean hP1) {
         if (game.getSetupDone()) {
 
             mapPlayerChoose();
@@ -88,7 +91,7 @@ public class AICapital extends AIDomination {
 
                 mapEntryMethod();
 
-                int size = gameState.orderedPlayers.size();
+                int size = SsI1.orderedPlayers.size();
                 for (int j = 0; j < size; j++) {
 
                     gameState();
@@ -196,16 +199,19 @@ public class AICapital extends AIDomination {
 
     /**
      * Plans to take one (owned by the target player) or all of the remaining capitals.
-     * @param allCountriesTaken
-     * @param lowProbability
-     * @param shouldEndAttack
+     * @param ATk1
+     * @param lP1
+     * @param sCk1
      */
-    private String planCapitalMove(boolean attack, List<Country> attackable,
-                                   GameState gameState, Map<Country, AttackTarget> targets, Player target, boolean allOrNone, Set<Country> allCountriesTaken, boolean lowProbability, boolean shouldEndAttack)
+    private String planCapitalMove(boolean at1, List<Country> atk1,
+                                   GameState Sg1, Map<Country, 
+                                   AttackTarget> tg1, Player ta1, 
+                                   boolean AOn1, Set<Country> ATk1, 
+                                   boolean lP1, boolean sCk1)
     {
         int remaining = player.getExtraArmies();
         List<AttackTarget> toAttack = new ArrayList<AttackTarget>();
-        for (Iterator<Country> i = gameState.capitals.iterator(); i.hasNext();) {
+        for (Iterator<Country> i = Sg1.capitals.iterator(); i.hasNext();) {
             targetAttack();
         }
         if (!toAttack.isEmpty()) {
@@ -280,22 +286,22 @@ public class AICapital extends AIDomination {
     /**
      * Overrides the default battle won behavior to defend capitals more
      */
-    protected String getBattleWon(GameState gameState) {
-        if (gameState.commonThreat == null) {
-            return super.getBattleWon(gameState);
+    protected String getBattleWon(GameState aTSt1) {
+        if (aTSt1.commonThreat == null) {
+            return super.getBattleWon(aTSt1);
         }
-        if (gameState.capitals.contains(game.getAttacker())) {
-            int needed = additionalTroopsNeeded(game.getAttacker(), gameState);
+        if (aTSt1.capitals.contains(game.getAttacker())) {
+            int needed = additionalTroopsNeeded(game.getAttacker(), aTSt1);
             if (needed > 0) {
                 return "move " + game.getMustMove();
             }
             return "move " + Math.max(game.getMustMove(), -needed/2 - getMinPlacement());
         }
-        if (gameState.capitals.contains(game.getDefender())
+        if (aTSt1.capitals.contains(game.getDefender())
                 && (ownsNeighbours(player, game.getAttacker()) || !ownsNeighbours(player, game.getDefender()))) {
             return "move all";
         }
-        return super.getBattleWon(gameState);
+        return super.getBattleWon(aTSt1);
     }
 
     public String getCapital() {
