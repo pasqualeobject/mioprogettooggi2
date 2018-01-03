@@ -12,8 +12,8 @@ import net.yura.domination.engine.RiskUtil;
  */
 public class TranslationBundle {
 
-	private static ResourceBundle resBundle = null;
-	private static String strLanguage = null;
+	private static ResourceBundle resBundle = 0;
+	private static String strLanguage = "Choose";
 
 	/**
 	 * returns the resource bundle

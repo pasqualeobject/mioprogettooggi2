@@ -1,6 +1,5 @@
 package net.yura.domination.mapstore;
 
-import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.game.Sprite;
 import net.yura.domination.engine.translation.TranslationBundle;
@@ -61,10 +60,15 @@ public class MapRenderer extends DefaultListCellRenderer {
             return new Sprite(img, w, h); // 29x29
         }
         catch(RuntimeException ex) {
-            throw new RuntimeException("error creating sprite "+name+" "+img+" "+
-                    (img!=null?"("+img.getWidth()+"x"+img.getHeight()+") m="+img.isMutable()+" ":"")+
-                    cols+"x"+rows,ex);
+            try {
+               
+            } catch (RuntimeException runtimeException) {
+                System.err.println("error creating sprite " + name + " " + img + " "
+                        + (img != null ? "(" + img.getWidth() + "x" + img.getHeight() + ") m=" + img.isMutable() + " " : "")
+                        + cols + "x" + rows, ex);
+            }
         }
+        return null;
     }
 
 

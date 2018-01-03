@@ -1,26 +1,10 @@
 package collisionphysics;
 
 /**
- * This class provides static methods for collision detection and 
- * responses, based on Netwon's physics.
- * It is modeled after java.lang.Math.
- * 
- * The collision detection is based on ray tracing and vector analysis.
- * In all situations, we try to compute the parameter t (collision time),
- * and accept the minimum t, such that, 0 < t <= detectionTimeLimit.
- * 
- * In a complex system (e.g., many bouncing balls), only the first collision
- * matters. Hence, we need to find the earliest (smallest) t among all the
- * detected collisions.
+ * This class provides static methods 3D support
+ * @author Il23
  *
- * @author Hock-Chuan Chua
- * @version 0.3 (30 October 2010)
  */
- /* 
-  * TODO: 3D support
-  * TODO: Error Analysis and Test cases
-  * TODO: assert in public methods
-  */
 public class CollisionPhysics {
 
    // Working copy for computing response in intersect(ContainerBox box), 
@@ -114,7 +98,7 @@ public class CollisionPhysics {
     *                   Otherwise, set collision time to infinity.
     */
    public static void pointIntersectsLineVertical(
-         float pointX, float pointY, float speedX, float speedY, float radius,
+         float pointX, float pointY, int speedX, float speedY, float radius,
          float lineX, float timeLimit, CollisionResponse response) {
 
       // Assumptions:
@@ -153,7 +137,7 @@ public class CollisionPhysics {
     * @see movingPointIntersectsLineVertical().
     */
    public static void pointIntersectsLineHorizontal(
-         float pointX, float pointY, float speedX, float speedY, float radius,
+         float pointX, float pointY, float speedX, int speedY, float radius,
          float lineY, float timeLimit, CollisionResponse response) {
 
       // Assumptions:
@@ -278,9 +262,9 @@ public class CollisionPhysics {
       if (sol1 > 0 && sol2 > 0) {
          return (float)Math.min(sol1, sol2);
       } else if (sol1 > 0) {
-         return (float)sol1;
+         return (double)sol1;
       } else if (sol2 > 0) {
-         return (float)sol2;
+         return (double)sol2;
       } else {
          return Float.MAX_VALUE;
       }
@@ -409,7 +393,7 @@ public class CollisionPhysics {
     */
    public static void pointIntersectsLine(
          float pointX, float pointY, float speedX, float speedY, float radius,
-         float lineX1, float lineY1, float lineX2, float lineY2,
+         int lineX1, int lineY1, int lineX2, int lineY2,
          float timeLimit, CollisionResponse response) {
 
       // Assumptions:
@@ -491,7 +475,7 @@ public class CollisionPhysics {
       // Solve for t (time of collision) and lambda (point of impact on the line)
       double t;
       double lambda;
-      double det = -speedX * lineVectorY + speedY * lineVectorX;
+      int det = -speedX * lineVectorY + speedY * lineVectorX;
 
       if (det == 0) {             // FIXME: Use a threshold?
          t = Double.MAX_VALUE;    // No collision possible.
@@ -571,7 +555,7 @@ public class CollisionPhysics {
     */
    public static void pointIntersectsLineSegmentNoEndPoints(
          float pointX, float pointY, float speedX, float speedY, float radius,
-         float lineX1, float lineY1, float lineX2, float lineY2,
+         int lineX1, int lineY1, int lineX2, int lineY2,
          float timeLimit, CollisionResponse response) {
       
       // Assumptions:
@@ -780,9 +764,9 @@ public class CollisionPhysics {
       if (sol1 > 0 && sol2 > 0) {
          return (float)Math.min(sol1, sol2);
       } else if (sol1 > 0) {
-         return (float)sol1;
+         return (double)sol1;
       } else if (sol2 > 0) {
-         return (float)sol2;
+         return (double)sol2;
       } else {
          // No positive t solution. Set detected collision time to infinity.
          return Float.MAX_VALUE;

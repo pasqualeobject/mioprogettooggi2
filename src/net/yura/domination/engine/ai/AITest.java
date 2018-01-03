@@ -116,10 +116,11 @@ public class AITest extends AISubmissive {
      */
     public String findAttackableTerritory(Player p) {
     	Vector countries = p.getTerritoriesOwned();
-
-    	for (int i=0; i<countries.size(); i++) {
+        int size = countries.size();
+    	for (int i=0; i<size; i++) {
     		Vector neighbors = ((Country)countries.elementAt(i)).getNeighbours();
-    		for (int j=0; j<neighbors.size(); j++) {
+    		int size2 = neighbors.size();
+    		for (int j=0; j<size2; j++) {
     			if (((Country)neighbors.elementAt(j)).getOwner() != p) {
     				if ((p.getCapital() != null && ((Country)countries.elementAt(i)).getColor() != p.getCapital().getColor()) || p.getCapital() == null)
     					return ((Country)countries.elementAt(i)).getColor()+"";
@@ -143,11 +144,13 @@ public class AITest extends AISubmissive {
 	Vector n=new Vector();
     	Country source,target;
 	if (ratio<0) { ratio = 0;}
-	for (int a=0; a< t.size() ; a++) {
+	int size = t.size();
+	for (int a=0; a< size; a++) {
 	    source=(Country)t.elementAt(a);
 	    if ( source.getOwner() == player && source.getArmies() > 1 ) {
 		n = source.getNeighbours();
-		for (int b=0; b< n.size() ; b++) {
+		int size2 = n.size();
+		for (int b=0; b< size2; b++) {
 		    target=(Country)n.elementAt(b);
 		    if ( target.getOwner() != player &&
 			( (double)(source.getArmies()/target.getArmies()) > ratio)

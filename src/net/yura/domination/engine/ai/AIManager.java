@@ -7,6 +7,11 @@ import net.yura.domination.engine.Risk;
 import net.yura.domination.engine.core.RiskGame;
 import net.yura.util.Service;
 
+/**
+ * Class AIManager
+ * @author Il23
+ *
+ */
 public class AIManager {
 
     private static int wait=500;
@@ -23,27 +28,38 @@ public class AIManager {
 
     public AIManager() {
         Iterator<Class<AI>> providers = Service.providerClasses(AIManager.class);
-        while (providers.hasNext()) {
+        
             try {
+                while (providers.hasNext()) {
+                System.out.println("out");}
                 // each AIManager has its own instances of AI players so the state does not leak
                 AI ai = providers.next().newInstance();
                 int type = ai.getType();
                 if ( ais.get( type ) !=null ) {
-                    throw new RuntimeException("more then 1 ai with same type");
+                  try{
+                   
+                    } catch (RuntimeException runtimeException) {
+                        System.out.println ("more then 1 ai with same type");
+                    }
                 }
                 ais.put( type , ai );
+            
             }
             catch (Exception ex) {
-                throw new RuntimeException(ex);
+                try {
+                } catch (RuntimeException runtimeException) {
+                    System.out.println("error");
+                }
             }
         }
-    }
 
     public void play(Risk risk) {
             RiskGame game = risk.getGame();
             String output = getOutput(game, game.getCurrentPlayer().getType() );
             try { Thread.sleep(wait); }
-            catch(InterruptedException e) {}
+            catch(InterruptedException e) {
+            System.out.println("error");
+            }
             risk.parser(output);
     }
 

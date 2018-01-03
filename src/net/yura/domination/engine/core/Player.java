@@ -123,7 +123,8 @@ public class Player implements Serializable {
 	int n=0;
 
 	// add new armies for the Continents Owned
-	for (int c=0; c< territoriesOwned.size() ; c++) {
+    int size = territoriesOwned.size();
+	for (int c=0; c< size; c++) {
 
 	    n = n + ((Country)territoriesOwned.elementAt(c)).getArmies();
 

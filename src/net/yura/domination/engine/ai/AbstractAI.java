@@ -7,6 +7,11 @@ import net.yura.domination.engine.ai.logic.AIDomination;
 import net.yura.domination.engine.ai.logic.AIMission;
 import net.yura.domination.engine.core.RiskGame;
 
+/**
+ * Abstract Class
+ * @author Il23
+ *
+ */
 public abstract class AbstractAI implements AI {
 	
     private final AI domination;

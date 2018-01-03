@@ -58,8 +58,8 @@ public class Service {
                         URL url = (URL) providerFiles.nextElement();
                         Reader reader = new InputStreamReader(url.openStream(), "UTF-8");
                         readURL(instantiate,reader,classLoader,providers);
-                    } catch (Exception ex) {
-
+                    } catch (IOException ex) {
+                   System.out.println("error");
                     }
                 }
             } else {
@@ -74,7 +74,7 @@ public class Service {
                 }
             }
         } catch (IOException ioe) {
-
+           System.out.println("error");
         }
         return providers.iterator();
     }
@@ -104,7 +104,8 @@ public class Service {
                     // Try and load the class
                     classes.add(classLoader.loadClass(line));
                 }
-            } catch (Exception ex) {
+            } catch (ClassNotFoundException ex) {
+                System.out.println("error");
                 // this means a name in the file can not be found as a class
                 //ex.printStackTrace();
                 // Just try the next line
@@ -125,8 +126,10 @@ public class Service {
                 // stick it into our vector...
                 providers.add(obj);
             } catch (InstantiationException e) {
+                System.out.println("error");
                 //e.printStackTrace();
             } catch (IllegalAccessException e) {
+                System.out.println("error");
                 //e.printStackTrace();
             }
             //Logger.debug("Service: loaded "+ obj.getClass().getName());

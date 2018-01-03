@@ -9,6 +9,11 @@ import java.util.ResourceBundle;
 import java.net.URL;
 import net.yura.domination.engine.core.RiskGame;
 
+/**
+ * Risk Interface
+ * @author Il23
+ *
+ */
 public interface RiskIO {
 
         /**

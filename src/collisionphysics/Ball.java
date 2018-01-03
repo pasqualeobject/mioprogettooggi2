@@ -1,5 +1,10 @@
 package collisionphysics;
 
+/**
+ * Ball Class
+ * @author Il23
+ *
+ */
 public class Ball {
 	/**
 	 * variabiles float for center of ball, x and y

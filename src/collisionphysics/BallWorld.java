@@ -61,7 +61,9 @@ public class BallWorld implements Runnable {
             // Delay and give other thread a chance
             try {
                 Thread.sleep(timeLeftMillis);
-            } catch (InterruptedException ex) {}
+            } catch (InterruptedException ex) {
+            System.out.println("error");
+            }
         }
 
     }

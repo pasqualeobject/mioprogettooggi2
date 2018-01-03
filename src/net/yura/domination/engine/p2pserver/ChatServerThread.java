@@ -15,9 +15,11 @@ import net.yura.domination.engine.core.RiskGame;
  * @author Yura Mamyrin
  */
 
-// The main child thread waits for new information in the ChatArea, and 
-// sends it out to the eagerly waiting clients
-
+/**
+ * The main child thread waits for new information in the Chat Area
+ * @author Il23
+ *
+ */
 public class ChatServerThread extends Thread {
 
     LinkedList m_lList = new LinkedList();
@@ -108,6 +110,7 @@ public class ChatServerThread extends Thread {
 
 		}
 		catch (IOException e) {
+                    System.out.println("error");
                        //System.out.println("ChatServerThread IOException: "+
                        //e.getMessage());
                        //RiskUtil.printStackTrace(e);

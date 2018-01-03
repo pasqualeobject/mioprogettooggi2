@@ -11,8 +11,10 @@ import net.yura.mobile.gui.components.RadioButton;
 import net.yura.mobile.gui.plaf.Style;
 
 /**
- * @author Yura
- */                             // needs to be RadioButton to support different icon states
+ * BadgetButton Class              
+ * @author Il23
+ *
+ */
 public class BadgeButton extends RadioButton implements Observer {
 
     Border border;
@@ -23,11 +25,16 @@ public class BadgeButton extends RadioButton implements Observer {
         try {
             border = DesktopPane.getDefaultTheme("Badge").getBorder(Style.ALL);
         }
-        catch (Exception ex) { }
+        catch (Exception ex) {System.out.println("error");
+        }
 
         setHorizontalAlignment(Graphics.HCENTER);
     }
-
+    
+    /**
+     *//
+     * @param g
+     */
     public void paint(Graphics2D g) {
         super.paint(g);
         

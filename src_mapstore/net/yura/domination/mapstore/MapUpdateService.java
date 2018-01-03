@@ -27,7 +27,7 @@ public class MapUpdateService extends Observable {
 
     static final Logger logger = Logger.getLogger(MapUpdateService.class.getName());
     
-    static MapUpdateService updateService;
+    static MapUpdateService updateService = 0;
     
     /**
      * Costant about List for Generics Variabiles applied
@@ -58,12 +58,12 @@ public class MapUpdateService extends Observable {
     public void init(List mapsUIDs,String url) {
         
         List gotMaps = getMaps(url, mapsUIDs);
-        
-        for (int c=0;c<mapsUIDs.size();c++) {
+        int size = mapsUIDs.size();
+        for (int c=0;c<size;c++) {
             String uid = (String)mapsUIDs.get(c);
             List theMaps = new ArrayList(1);
-
-            for (int i=0;i<gotMaps.size();i++) {
+            int size2 = gotMaps.size();
+            for (int i=0;i<size2;i++) {
                 Map themap = (Map)gotMaps.get(i);
                 String mapUID = MapChooser.getFileUID( themap.getMapUrl() );
                 if (mapUID.equals( uid )) { // we found the map
@@ -90,8 +90,8 @@ public class MapUpdateService extends Observable {
     public static List getMaps(String url,List mapsUIDs) {
     
         StringBuffer payload=new StringBuffer();
-        
-        for (int c=0;c<mapsUIDs.size();c++) {
+        int size = mapsUIDs.size();
+        for (int c=0;c<size;c++) {
             String uid = (String)mapsUIDs.get(c);
             if (payload.length()!=0) {
                 payload.append('&');
@@ -131,7 +131,8 @@ logger.fine("URL: " + url + " payload: " + payload);
     }
 
     private int getIndexOfMap(String mapUID) {
-        for (int c = 0; c < mapsToUpdate.size(); c++) {
+        int size = mapsToUpdate.size();
+        for (int c = 0; c < size; c++) {
             Map map = (Map) mapsToUpdate.get(c);
             String amapUID = MapChooser.getFileUID(map.getMapUrl());
             if (mapUID.equals(amapUID)) {

@@ -14,8 +14,8 @@ import net.yura.domination.engine.RiskUtil;
  */
 public class MapTranslator
 {
-	private static ResourceBundle MapResb = null;
-	private static ResourceBundle CardsResb = null;
+	private static ResourceBundle MapResb = 0;
+	private static ResourceBundle CardsResb = 0;
 
 
 	/**

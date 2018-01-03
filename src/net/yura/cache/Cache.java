@@ -2,6 +2,7 @@ package net.yura.cache;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -34,7 +35,7 @@ public class Cache {
         for (;;) {
             if (dir.exists()) {
                 if (!dir.isDirectory() || !dir.canWrite()) {
-                    throw new RuntimeException("can not write to dir: "+dir);
+                    System.err.println("can not write to dir: "+dir);
                 }
                 if (DEBUG) logger.info("can write to: "+dir);
                 break;
@@ -51,8 +52,9 @@ public class Cache {
             return new File(cacheDir, fileName);
         }
         catch (Exception ex) {
-            throw new RuntimeException(ex);
+             System.err.println("RuntimeException");
         }
+        return null;
     }
 
     public void put(String key, byte[] value) {
@@ -67,9 +69,7 @@ public class Cache {
                     logger.info("Going to make dir "+cacheDir);
                     checkCacheDir();
                 }
-                FileOutputStream out = new FileOutputStream(file);
-                out.write(value);
-                out.close();
+                
             }
             catch (Exception ex) {
                 boolean exists = file.exists();
@@ -87,11 +87,18 @@ public class Cache {
                                 " isDir="+cacheDir.isDirectory(), ex);
             }
         }
+        finally
+        {
+        	FileOutputStream out = new FileOutputStream(file);
+            out.write(value);
+            out.close();
+        }
     }
     private void checkCacheDir() {
         if (!cacheDir.mkdirs()) {
-            while (!cacheDir.isDirectory()) {
-                throw new RuntimeException("can not make cache dir: "+cacheDir);
+            boolean cach = !cacheDir.isDirectory();
+            while (cach) {
+                System.err.println("can not make cache dir: "+cacheDir);
             }
         }
     }
@@ -104,8 +111,14 @@ public class Cache {
                 file.setLastModified(System.currentTimeMillis());
                 return new FileInputStream(file);
             }
-            catch (Exception ex) {
-                throw new RuntimeException(ex);
+            catch (FileNotFoundException ex) {
+                System.err.println("RuntimeException(ex)");
+<<<<<<< HEAD
+            }
+            finally {
+            	return new FileInputStream(file);
+=======
+>>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
             }
         }
         else {

@@ -12,44 +12,50 @@ import net.yura.domination.engine.Risk;
  */
 
 
- // This thread reads in input stream from a socket and 
- // appends the output to a TextArea object
 
-public class ChatDisplayThread extends Thread {    
-   Risk risk; 
-   BufferedReader inChat = null;
 
-    ChatDisplayThread (Risk r, BufferedReader in) { 
+/**
+ * This thread reads in input stream from a socket
+ * @author Il23
+ *
+ */
+
+public class ChatDisplayThread extends Thread {
+    Risk risk;
+    BufferedReader inChat = null;
+
+    ChatDisplayThread (Risk r, BufferedReader in) {
         super("ChatDisplayThread");
         risk = r;
-        inChat = in; 
+        inChat = in;
     }
 
     public void run() {
-	//System.out.println("Start DisplayThread ");
-	String str;
-	//boolean badexit=true;
+        //System.out.println("Start DisplayThread ");
+        String str;
+        //boolean badexit=true;
 
-	try {
-               while ((str = inChat.readLine()) != null) {
-                       if (str.length() > 0) {
-                           risk.parserFromNetwork( str );
-                       }
-               }
-	}
-	catch (IOException e) {
+        try {
+            String read = (str = inChat.readLine());
+            while (read != null) {
+                if (str.length() > 0) {
+                    risk.parserFromNetwork( str );
+                }
+            }
+        }
+        catch (IOException e) {
 
-	    //System.out.println("inChat received an IOException: "+
-	    //e.getMessage());
-	    //RiskUtil.printStackTrace(e);
+            //System.out.println("inChat received an IOException: "+
+            //e.getMessage());
+            //RiskUtil.printStackTrace(e);
 
-	    //if ("Stream closed".equals( e.getMessage() ) ) { badexit=false; }
+            //if ("Stream closed".equals( e.getMessage() ) ) { badexit=false; }
+            System.out.println("error");
+        }
 
-       }
+        //System.out.println("Display Thread Finishing");
 
-	//System.out.println("Display Thread Finishing");
+        risk.disconnected();
 
-	risk.disconnected();
-
-    } 
+    }
 } 
