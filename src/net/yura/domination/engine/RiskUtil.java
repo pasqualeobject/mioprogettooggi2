@@ -98,8 +98,6 @@ public class RiskUtil {
     public static InputStream openStream(String a) throws IOException {
         return streamOpener.openStream(a);
     }
-<<<<<<< HEAD
-
     public static ResourceBundle getResourceBundle(Class c,String n,Locale l) {
         return streamOpener.getResourceBundle(c, n, l);
     }
@@ -117,28 +115,6 @@ public class RiskUtil {
     public static InputStream getLoadFileInputStream(String file) throws Exception {
         return streamOpener.loadGameFile(file);
     }
-
-=======
-
-    public static ResourceBundle getResourceBundle(Class c,String n,Locale l) {
-        return streamOpener.getResourceBundle(c, n, l);
-    }
-
-    public static void openURL(URL url) throws Exception {
-        streamOpener.openURL(url);
-    }
-
-    public static void openDocs(String docs) throws Exception {
-        streamOpener.openDocs(docs);
-    }
-    public static void saveFile(String file, RiskGame aThis) throws Exception {
-        streamOpener.saveGameFile(file, aThis);
-    }
-    public static InputStream getLoadFileInputStream(String file) throws Exception {
-        return streamOpener.loadGameFile(file);
-    }
-
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
     /**
      * option string looks like this:
      *
@@ -246,15 +222,8 @@ public class RiskUtil {
             }
         }
     }
-<<<<<<< HEAD
-
     public static void savePlayers(Risk risk,Class uiclass) {
 
-=======
-
-    public static void savePlayers(Risk risk,Class uiclass) {
-
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
         Preferences prefs=null;
         try {
             prefs = Preferences.userNodeForPackage( uiclass );
@@ -288,7 +257,6 @@ public class RiskUtil {
                 prefs.put(typeKey, type);
 
             }
-
             // on android this does not work, god knows why
             // whats the point of including a class if its
             // most simple and basic operation does not work?
@@ -415,7 +383,6 @@ public class RiskUtil {
 
         } catch (IOException ex) {
             Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
-<<<<<<< HEAD
         }
         return null;
     }
@@ -427,19 +394,6 @@ public class RiskUtil {
         } catch (IOException ex) {
             Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
-=======
-        }
-        return null;
-    }
-    public static java.util.Map RiskUtil3(){
-        BufferedReader bufferin=null;
-        String input = null;
-        try {
-            input = bufferin.readLine();
-        } catch (IOException ex) {
-            Logger.getLogger(RiskUtil.class.getName()).log(Level.SEVERE, null, ex);
-        }
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
         if(input.charAt(0)!='[' || input.charAt( input.length()-1 )!=']') {
         } else {
             String mode = "newsection";
@@ -462,7 +416,6 @@ public class RiskUtil {
         Object mode = null;
         if ("borders".equals(mode)) {
             // we dont care about anything in or after the borders section
-
         }
         else if ("countries".equals(mode)) {
             Hashtable info = new Hashtable();
@@ -479,7 +432,6 @@ public class RiskUtil {
             while (description==null) {
 
                 StringBuffer d = new StringBuffer();
-<<<<<<< HEAD
 
                 while (st.hasMoreElements()) {
 
@@ -494,25 +446,14 @@ public class RiskUtil {
             Vector misss=null;
             misss.add( description );
 
-=======
+            description = d.toString();
 
-                while (st.hasMoreElements()) {
-
-                    d.append( st.nextToken() );
-                    d.append( " " );
-                }
-
-                description = d.toString();
-                break;
-
-            }
-            Vector misss=null;
-            misss.add( description );
-
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
         }
+        Vector misss=null;
+        misss.add( description );
         return null;
     }
+
     public static java.util.Map RiskUtil5(){
         Object mode = null;
         if ("newsection".equals(mode)) {
@@ -577,7 +518,6 @@ public class RiskUtil {
 
                 while(input != null) {
 
-
                     RiskUtil2();{
 
                         RiskUtil3();
@@ -618,52 +558,52 @@ public class RiskUtil {
         return info;
 
     }
-
     public static void saveGameLog(File logFile, RiskGame game) throws IOException {
-        FileWriter fileout = new FileWriter(logFile);
-        BufferedWriter buffer = new BufferedWriter(fileout);
-        PrintWriter printer = new PrintWriter(buffer);
+        FileWriter fileout = null;
+        BufferedWriter buffer = null;
+        PrintWriter printer = null;
         List commands = game.getCommands();
         int size = commands.size();
         for (int line = 0; line < size; line++) {
             printer.println(commands.get(line));
         }
-        printer.close();
+        try {
+            fileout = new FileWriter(logFile);
+            printer = new PrintWriter(buffer);
+            buffer = new BufferedWriter(fileout);
+        }catch (IOException e) {
+            System.out.println("not create file");
+        } finally {
+            fileout.close();
+            printer.close();
+            buffer.close();
+        }
+
     }
 
     public static OutputStream getOutputStream(File dir,String fileName) throws Exception {
-        File outFile = new File(dir,fileName);
+        File outFile = new File(dir, fileName);
         // as this could be dir=.../maps fileName=preview/file.jpg
         // we need to make sure the preview dir exists, and if it does not, we must make it
         File parent = outFile.getParentFile();
         OutputStream oS = null;
         if (!parent.isDirectory() && !parent.mkdirs()) { // if it does not exist and i cant make it
             try {
-            
-<<<<<<< HEAD
-            } catch{
-            	
-            }
-            finally (RuntimeException runtimeException) {
                 oS = new FileOutputStream(outFile);
+            } catch (Exception e) {
+                System.out.println("null");
+            } finally {
+                oS.close();
                 System.err.println("can not create dir " + parent);
             }
-           
-=======
-            } catch (RuntimeException runtimeException) {
-                oS = new FileOutputStream(outFile);
-                System.err.println("can not create dir " + parent);
-            }
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
         }
-
         return oS;
     }
 
-    public static void rename(File oldFile,File newFile) {
+    public static void rename (File oldFile, File newFile){
         if (newFile.exists() && !newFile.delete()) {
             try {
-            
+
             } catch (RuntimeException runtimeException) {
                 System.err.println("can not del dest file: " + newFile);
             }
@@ -673,12 +613,11 @@ public class RiskUtil {
                 copy(oldFile, newFile);
                 if (!oldFile.delete()) {
                     // this is not so bad, but still very strange
-                    System.err.println("can not del source file: "+oldFile);
+                    System.err.println("can not del source file: " + oldFile);
                 }
-            }
-            catch(Exception ex) {
+            } catch (Exception ex) {
                 try {
-                   
+
                 } catch (RuntimeException runtimeException) {
                     System.err.println("rename failed: from: " + oldFile + " to: " + newFile);
                 }
@@ -687,24 +626,23 @@ public class RiskUtil {
     }
 
 
-
-    public static Vector asVector(java.util.List list) {
-        return list instanceof Vector?(Vector)list:new Vector(list);
+    public static Vector asVector (java.util.List list){
+        return list instanceof Vector ? (Vector) list : new Vector(list);
     }
 
-    public static Hashtable asHashtable(java.util.Map map) {
-        return map instanceof Hashtable?(Hashtable)map:new Hashtable(map);
+    public static Hashtable asHashtable (java.util.Map map){
+        return map instanceof Hashtable ? (Hashtable) map : new Hashtable(map);
     }
 
 
-    public static String replaceAll(String string, String notregex, String replacement) {
-        return string.replaceAll( quote(notregex) , quoteReplacement(replacement));
+    public static String replaceAll (String string, String notregex, String replacement){
+        return string.replaceAll(quote(notregex), quoteReplacement(replacement));
     }
 
     /**
      * @see java.util.regex.Pattern#quote(java.lang.String)
      */
-    public static String quote(String s) {
+    public static String quote (String s){
         int slashEIndex = s.indexOf("\\E");
         if (slashEIndex == -1)
             return "\\Q" + s + "\\E";
@@ -727,17 +665,19 @@ public class RiskUtil {
     /**
      * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
      */
-    public static String quoteReplacement(String s) {
+    public static String quoteReplacement (String s){
         if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1))
             return s;
         StringBuffer sb = new StringBuffer();
         int leng = s.length();
-        for (int i=0; i<leng; i++) {
+        for (int i = 0; i < leng; i++) {
             char c = s.charAt(i);
             if (c == '\\') {
-                sb.append('\\'); sb.append('\\');
+                sb.append('\\');
+                sb.append('\\');
             } else if (c == '$') {
-                sb.append('\\'); sb.append('$');
+                sb.append('\\');
+                sb.append('$');
             } else {
                 sb.append(c);
             }
@@ -746,15 +686,13 @@ public class RiskUtil {
     }
 
 
-
-
-
-    public static void copy(File src, File dest) throws IOException {
-
-        if(src.isDirectory()){
+    public static void copy (File src, File dest) throws IOException {
+        File srcFile = null;
+        File destFile = null;
+        if (src.isDirectory()) {
 
             //if directory not exists, create it
-            if(!dest.exists()){
+            if (!dest.exists()) {
                 dest.mkdir();
                 System.out.println("Directory copied from "
                         + src + "  to " + dest);
@@ -763,38 +701,47 @@ public class RiskUtil {
             //list all the directory contents
             String files[] = src.list();
             int leng = files.length;
-            for (int c=0;c<leng;c++) {
+            for (int c = 0; c < leng; c++) {
                 //construct the src and dest file structure
-                File srcFile = new File(src, files[c]);
-                File destFile = new File(dest, files[c]);
+                try {
+                    srcFile  = new File(src, files[c]);
+                    destFile = new File(dest, files[c]);
+                } catch (Throwable e) {
+                    System.out.println("file not found");
+                }
                 //recursive copy
-                copy(srcFile,destFile);
+                copy(srcFile, destFile);
             }
 
-        }else{
+        } else {
             //if file, then copy it
             //Use bytes stream to support all file types
-            InputStream in = new FileInputStream(src);
-            OutputStream out = new FileOutputStream(dest);
-
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                in = new FileInputStream(src);
+                out = new FileOutputStream(dest);
+            }catch (IOException e) {
+                System.out.println("File not found");
+            } finally {
+                in.close();
+                out.close();
+            }
             byte[] buffer = new byte[1024];
 
             int length;
             //copy the file content in bytes
             int buff = (length = in.read(buffer));
-            while (buff > 0){
+            while (buff > 0) {
                 out.write(buffer, 0, length);
             }
-
-            in.close();
-            out.close();
             System.out.println("File copied from " + src + " to " + dest);
         }
     }
 
-    public static String getAtLeastOne(StringTokenizer stringT) {
+    public static String getAtLeastOne (StringTokenizer stringT){
         StringBuilder text = new StringBuilder(stringT.nextToken());
-        while ( stringT.hasMoreTokens() ) {
+        while (stringT.hasMoreTokens()) {
             text.append(' ');
             text.append(stringT.nextToken());
         }

@@ -1,10 +1,6 @@
 package net.yura.cache;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,7 +53,8 @@ public class Cache {
         return null;
     }
 
-    public void put(String key, byte[] value) {
+    public void put(String key, byte[] value) throws IOException {
+        FileOutputStream out = null;
         File file = getFileName(key);
         if (file.exists()) {
             logger.log(Level.WARNING, "already has file: {0}", key);
@@ -68,10 +65,10 @@ public class Cache {
                 if (!cacheDir.isDirectory()) {
                     logger.info("Going to make dir "+cacheDir);
                     checkCacheDir();
+                    out = new FileOutputStream(file);
                 }
-                
             }
-            catch (Exception ex) {
+            catch (IOException ex) {
                 boolean exists = file.exists();
                 boolean deleted = false;
                 if (exists) {
@@ -86,13 +83,12 @@ public class Cache {
                                 " exists="+cacheDir.exists()+
                                 " isDir="+cacheDir.isDirectory(), ex);
             }
+            finally {
+                out.write(value);
+                out.close();
+            }
         }
-        finally
-        {
-        	FileOutputStream out = new FileOutputStream(file);
-            out.write(value);
-            out.close();
-        }
+
     }
     private void checkCacheDir() {
         if (!cacheDir.mkdirs()) {
@@ -102,23 +98,21 @@ public class Cache {
             }
         }
     }
-    public InputStream get(String key) {
+    public InputStream get(String key) throws IOException {
         File file = getFileName(key);
+        FileInputStream fin = null;
         if (file.exists()) {
             try {
                 if (DEBUG) logger.log(Level.INFO, "getting from cache: {0}", key);
 
                 file.setLastModified(System.currentTimeMillis());
-                return new FileInputStream(file);
+                fin = new FileInputStream(file);
             }
             catch (FileNotFoundException ex) {
                 System.err.println("RuntimeException(ex)");
-<<<<<<< HEAD
             }
             finally {
-            	return new FileInputStream(file);
-=======
->>>>>>> 2290264b552aa68c481db9320ffc4f67e1ba5c6f
+            	fin.close();
             }
         }
         else {
