@@ -1,7 +1,7 @@
 package collisionphysics;
 
 /**
- * Ball Class
+ * Ball Class inizializzata OK funziona
  * @author Il23
  *
  */
